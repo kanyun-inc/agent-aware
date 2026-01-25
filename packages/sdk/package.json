@@ -1,0 +1,39 @@
+{
+  "name": "@reskill/agent-aware",
+  "version": "0.1.0",
+  "description": "Agent-aware RUM SDK - 用户行为采集库",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rslib build",
+    "dev": "rslib build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@microsoft/api-extractor": "^7.48.0",
+    "@rslib/core": "^0.3.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "jsdom": "^25.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^2.1.0"
+  },
+  "keywords": [
+    "rum",
+    "user-monitoring",
+    "agent-aware",
+    "ai"
+  ]
+}
