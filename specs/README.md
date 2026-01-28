@@ -47,6 +47,7 @@ specs/
 | [SDK-004](sdk/004-scroll-tracker.md) | scroll-tracker | accepted | 滚动追踪器 |
 | [SDK-005](sdk/005-hover-tracker.md) | hover-tracker | accepted | 悬停追踪器 |
 | [SDK-006](sdk/006-edit-tracker.md) | edit-tracker | accepted | 编辑追踪器 |
+| [SDK-007](sdk/007-esm-support.md) | esm-support | accepted | ESM 模块支持 |
 
 ### Server
 

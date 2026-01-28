@@ -12,7 +12,7 @@ pnpm add @reskill/agent-aware
 
 ## 使用
 
-### ES Module / TypeScript
+### ES Module (推荐)
 
 ```typescript
 import { initAgentAware } from '@reskill/agent-aware'
@@ -30,14 +30,36 @@ const { stop } = initAgentAware({
 stop()
 ```
 
-### Script 标签
+### CommonJS
+
+```javascript
+const { initAgentAware } = require('@reskill/agent-aware')
+
+const { stop } = initAgentAware({
+  endpoint: 'http://localhost:4100/behaviors',
+})
+```
+
+### 浏览器 Script 标签 (UMD)
 
 ```html
-<script src="https://unpkg.com/@reskill/agent-aware"></script>
+<script src="https://unpkg.com/@reskill/agent-aware/dist/index.umd.js"></script>
 <script>
   AgentAware.initAgentAware()
 </script>
 ```
+
+## 模块格式支持
+
+本包支持多种模块格式，适配不同的构建工具和运行环境：
+
+| 格式 | 文件 | 用途 |
+|------|------|------|
+| **ESM** | `dist/index.js` | 现代前端项目（Vite、Next.js、Webpack 5+）支持 tree-shaking |
+| **CommonJS** | `dist/index.cjs` | Node.js 项目、老旧构建工具 |
+| **UMD** | `dist/index.umd.js` | 浏览器 `<script>` 标签直接引入 |
+
+构建工具会根据 `package.json` 的 `exports` 字段自动选择合适的格式。
 
 ## 追踪的行为
 
