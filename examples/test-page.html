@@ -79,10 +79,15 @@
       justify-content: space-between;
       padding: 20px;
     }
-    .status {
+    .bottom-bar {
       position: fixed;
       bottom: 20px;
       right: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .status {
       background: #333;
       color: white;
       padding: 12px 20px;
@@ -94,6 +99,19 @@
     }
     .status.success {
       background: #28a745;
+    }
+    .refresh-btn {
+      padding: 12px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      background: #6c757d;
+      color: white;
+      transition: background 0.2s;
+    }
+    .refresh-btn:hover {
+      background: #5a6268;
     }
   </style>
 </head>
@@ -130,7 +148,11 @@
     </div>
   </div>
 
-  <div id="status" class="status">SDK 状态: 加载中...</div>
+  <div class="bottom-bar">
+    <button class="refresh-btn" onclick="checkBehaviors()">📊 查看数据</button>
+    <button class="refresh-btn" onclick="location.reload()">🔄 刷新</button>
+    <div id="status" class="status">SDK 状态: 加载中...</div>
+  </div>
 
   <!-- 加载 SDK -->
   <script src="../packages/sdk/dist/index.js"></script>
@@ -146,31 +168,55 @@
       const div = document.createElement('div')
       div.textContent = '点击成功！' + new Date().toLocaleTimeString()
       div.style.color = '#28a745'
-      this.parentElement.appendChild(div)
+      event.currentTarget.parentElement.appendChild(div)
       setTimeout(() => div.remove(), 2000)
+    }
+
+    async function checkBehaviors() {
+      try {
+        const res = await fetch('http://localhost:4100/behaviors')
+        const behaviors = await res.json()
+        console.log('[测试页面] 服务器存储的行为数据:', behaviors)
+        alert(`共有 ${behaviors.length} 条行为数据\n查看控制台了解详情`)
+      } catch (e) {
+        console.error('[测试页面] 获取数据失败:', e)
+        alert('获取数据失败: ' + e.message)
+      }
     }
 
     // 初始化 SDK
     try {
       if (typeof AgentAware !== 'undefined') {
-        AgentAware.initAgentAware({ debug: true })
+        console.log('[测试页面] AgentAware 对象:', AgentAware)
+        const instance = AgentAware.initAgentAware({ debug: true })
+        console.log('[测试页面] SDK 初始化完成:', instance)
         updateStatus('SDK 已启动', 'success')
       } else {
+        console.error('[测试页面] AgentAware 未定义')
         updateStatus('SDK 未加载', 'error')
       }
     } catch (e) {
+      console.error('[测试页面] SDK 初始化错误:', e)
       updateStatus('SDK 错误: ' + e.message, 'error')
     }
 
-    // 检查 Server 状态
-    fetch('http://localhost:4100/health')
-      .then(r => r.json())
-      .then(data => {
-        updateStatus(`SDK 已启动 | Server 已连接 | 总交互: ${data.totalInteractions}`, 'success')
-      })
-      .catch(() => {
-        updateStatus('SDK 已启动 | Server 未连接（请运行 pnpm dev:server）', 'error')
-      })
+    // 实时更新交互数
+    function updateInteractionCount() {
+      fetch('http://localhost:4100/health')
+        .then(r => r.json())
+        .then(data => {
+          updateStatus(`SDK 已启动 | Server 已连接 | 总交互: ${data.totalInteractions}`, 'success')
+        })
+        .catch(() => {
+          updateStatus('SDK 已启动 | Server 未连接（请运行 pnpm dev:server）', 'error')
+        })
+    }
+
+    // 初始检查
+    updateInteractionCount()
+    
+    // 每隔 2 秒更新一次交互数
+    setInterval(updateInteractionCount, 2000)
   </script>
 </body>
 </html>

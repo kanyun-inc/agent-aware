@@ -6,11 +6,15 @@
   "scripts": {
     "dev": "pnpm --filter @reskill/agent-aware-server dev",
     "dev:server": "pnpm --filter @reskill/agent-aware-server dev",
+    "dev:example": "node examples/server.js",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "test:watch": "pnpm -r test:watch"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.5"
   }
 }
