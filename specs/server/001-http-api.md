@@ -104,6 +104,12 @@ Behavior[]
 
 - 端口：4100
 - CORS：允许所有来源（开发环境）
+  - `Access-Control-Allow-Origin`: 回显请求的 Origin（支持任意来源）
+  - `Access-Control-Allow-Credentials: true`（支持携带 Cookie）
+  - `Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS`
+  - `Access-Control-Allow-Headers: Content-Type`
+  - 支持预检请求（OPTIONS）
+  - 说明：不使用通配符 `*`，而是动态回显请求的 Origin，以支持 credentials 模式
 - 无认证：本地开发场景
 
 ## 测试要点
@@ -118,6 +124,10 @@ Behavior[]
 - [x] GET /hotspots 返回热点区域
 - [x] GET /health 返回正确统计
 - [x] DELETE /behaviors 清空数据
+- [x] CORS 允许所有来源的跨域请求
+- [x] CORS 支持预检请求（OPTIONS）
+- [x] CORS 所有端点都支持跨域
+- [x] CORS 支持 credentials 模式（回显 Origin）
 
 ## 变更记录
 
@@ -125,3 +135,5 @@ Behavior[]
 |-----|---------|------|
 | 2026-01-25 | 初始版本 | 新功能 |
 | 2026-01-25 | 添加 GET 查询接口 | 支持 AI 查询 |
+| 2026-01-28 | 明确 CORS 配置细节 | 修复跨域问题 Bug |
+| 2026-01-28 | CORS 改用动态 Origin + credentials | 修复 credentials 模式下的 CORS 错误 |
