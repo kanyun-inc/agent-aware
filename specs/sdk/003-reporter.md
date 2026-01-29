@@ -2,7 +2,7 @@
 
 > 状态: accepted  
 > 创建: 2026-01-25  
-> 更新: 2026-01-25
+> 更新: 2026-01-29
 
 ## 背景
 
@@ -33,17 +33,25 @@ function createReporter(endpoint: string, options?: ReporterOptions): Reporter
 
 ### 数据格式
 
-上报时需要区分行为数据和错误数据：
-- 行为数据使用 `behaviors` 字段
-- 错误数据使用 `errors` 字段
+Reporter 根据 endpoint 发送对应的数据类型：
+- 发送到 `/behaviors` 端点：使用 `{ behaviors: Behavior[] }` 格式
+- 发送到 `/errors` 端点：使用 `{ errors: ErrorRecord[] }` 格式
 
 ```typescript
-// 请求体格式
+// 发送到 /behaviors 端点
 {
-  behaviors?: Behavior[]  // 行为追踪数据
-  errors?: ErrorRecord[]  // 错误记录数据
+  behaviors: Behavior[]
+}
+
+// 发送到 /errors 端点
+{
+  errors: ErrorRecord[]
 }
 ```
+
+SDK 为不同类型创建独立的 reporter 实例：
+- behavior reporter → `/behaviors` 端点
+- error reporter → `/errors` 端点
 
 ### 上报方式
 
@@ -74,17 +82,16 @@ function createReporter(endpoint: string, options?: ReporterOptions): Reporter
 
 ## 测试要点
 
-- [ ] report 加入队列
-- [ ] 100ms 防抖合并请求
-- [ ] 队列满立即发送
-- [ ] flush 立即发送
-- [ ] sendBeacon 优先使用
-- [ ] fetch 降级
-- [ ] 页面卸载触发 flush
-- [ ] 请求失败数据放回队列
-- [ ] 上报行为数据时使用 behaviors 字段
-- [ ] 上报错误数据时使用 errors 字段
-- [ ] 同时上报行为和错误数据时正确区分字段
+- [x] report 加入队列
+- [x] 100ms 防抖合并请求
+- [x] 队列满立即发送
+- [x] flush 立即发送
+- [x] sendBeacon 优先使用
+- [x] fetch 降级
+- [x] 页面卸载触发 flush
+- [x] 请求失败数据放回队列
+- [x] behavior reporter（/behaviors 端点）只发送 behaviors 字段
+- [x] error reporter（/errors 端点）只发送 errors 字段
 
 ## 变更记录
 
@@ -92,4 +99,5 @@ function createReporter(endpoint: string, options?: ReporterOptions): Reporter
 |-----|---------|------|
 | 2026-01-25 | 初始版本 | 新功能 |
 | 2026-01-29 | 明确区分 behaviors 和 errors 字段 | Bug 修复：错误数据应使用 errors 字段上报 |
+| 2026-01-29 | 更新数据格式描述：不同类型使用独立 reporter 和端点 | 实现 SRV-003 Errors API，behaviors 和 errors 分别发送到不同端点 |
 

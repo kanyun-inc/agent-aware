@@ -134,9 +134,9 @@ describe('createReporter', () => {
     stringifySpy.mockRestore()
   })
 
-  it('上报错误数据时应该使用 errors 字段', () => {
+  it('上报错误数据时应该使用 errors 字段（使用 /errors 端点）', () => {
     const stringifySpy = vi.spyOn(JSON, 'stringify')
-    const reporter = createReporter('http://localhost:4100/behaviors')
+    const reporter = createReporter('http://localhost:4100/errors')
 
     reporter.report(mockError)
     reporter.flush()
@@ -154,12 +154,11 @@ describe('createReporter', () => {
     stringifySpy.mockRestore()
   })
 
-  it('同时上报行为和错误数据时应该使用不同的字段', () => {
+  it('behavior reporter 只发送 behaviors 字段', () => {
     const stringifySpy = vi.spyOn(JSON, 'stringify')
     const reporter = createReporter('http://localhost:4100/behaviors')
 
     reporter.report(mockBehavior)
-    reporter.report(mockError)
     reporter.flush()
 
     // 检查 JSON.stringify 被调用时的参数
@@ -169,9 +168,28 @@ describe('createReporter', () => {
     expect(payloadCall).toBeDefined()
     const payload = payloadCall![0]
     expect(payload).toHaveProperty('behaviors')
-    expect(payload).toHaveProperty('errors')
     expect(payload.behaviors).toHaveLength(1)
+    expect(payload).not.toHaveProperty('errors')
+    
+    stringifySpy.mockRestore()
+  })
+
+  it('error reporter 只发送 errors 字段', () => {
+    const stringifySpy = vi.spyOn(JSON, 'stringify')
+    const reporter = createReporter('http://localhost:4100/errors')
+
+    reporter.report(mockError)
+    reporter.flush()
+
+    // 检查 JSON.stringify 被调用时的参数
+    const calls = stringifySpy.mock.calls
+    const payloadCall = calls.find(call => call[0] && typeof call[0] === 'object' && ('behaviors' in call[0] || 'errors' in call[0]))
+    
+    expect(payloadCall).toBeDefined()
+    const payload = payloadCall![0]
+    expect(payload).toHaveProperty('errors')
     expect(payload.errors).toHaveLength(1)
+    expect(payload).not.toHaveProperty('behaviors')
     
     stringifySpy.mockRestore()
   })

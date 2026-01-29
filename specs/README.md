@@ -56,3 +56,4 @@ specs/
 |----|-----|------|------|
 | [SRV-001](server/001-http-api.md) | http-api | accepted | HTTP API（上报 + 查询） |
 | [SRV-002](server/002-behavior-store.md) | behavior-store | accepted | 行为存储 |
+| [SRV-003](server/003-errors-api.md) | errors-api | accepted | 错误数据 API（上报 + 查询 + 清除） |

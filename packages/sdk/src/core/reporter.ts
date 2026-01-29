@@ -46,22 +46,18 @@ export function createReporter(
     // 取出队列中的数据（最多 MAX_BATCH_SIZE 条）
     const items = queue.splice(0, MAX_BATCH_SIZE)
 
+    if (debug) {
+      console.log('[AgentAware] sending', items.length, 'items')
+    }
+
     // 区分 behaviors 和 errors
     const behaviors = items.filter(item => item.type !== 'error') as Behavior[]
     const errors = items.filter(item => item.type === 'error') as ErrorRecord[]
 
-    if (debug) {
-      console.log('[AgentAware] sending', behaviors.length, 'behaviors,', errors.length, 'errors')
-    }
-
-    // 构造请求体
-    const payload: { behaviors?: Behavior[]; errors?: ErrorRecord[] } = {}
-    if (behaviors.length > 0) {
-      payload.behaviors = behaviors
-    }
-    if (errors.length > 0) {
-      payload.errors = errors
-    }
+    // 构造请求体（基于 endpoint 判断发送哪种数据）
+    const payload = endpoint.includes('/errors')
+      ? { errors: errors.length > 0 ? errors : (items as ErrorRecord[]) }
+      : { behaviors: behaviors.length > 0 ? behaviors : (items as Behavior[]) }
 
     // 优先使用 sendBeacon
     const blob = new Blob([JSON.stringify(payload)], {
