@@ -44,14 +44,27 @@ export function createReporter(
     }
 
     // 取出队列中的数据（最多 MAX_BATCH_SIZE 条）
-    const behaviors = queue.splice(0, MAX_BATCH_SIZE)
+    const items = queue.splice(0, MAX_BATCH_SIZE)
+
+    // 区分 behaviors 和 errors
+    const behaviors = items.filter(item => item.type !== 'error') as Behavior[]
+    const errors = items.filter(item => item.type === 'error') as ErrorRecord[]
 
     if (debug) {
-      console.log('[AgentAware] sending', behaviors.length, 'behaviors')
+      console.log('[AgentAware] sending', behaviors.length, 'behaviors,', errors.length, 'errors')
+    }
+
+    // 构造请求体
+    const payload: { behaviors?: Behavior[]; errors?: ErrorRecord[] } = {}
+    if (behaviors.length > 0) {
+      payload.behaviors = behaviors
+    }
+    if (errors.length > 0) {
+      payload.errors = errors
     }
 
     // 优先使用 sendBeacon
-    const blob = new Blob([JSON.stringify({ behaviors })], {
+    const blob = new Blob([JSON.stringify(payload)], {
       type: 'application/json',
     })
 
@@ -66,14 +79,14 @@ export function createReporter(
       fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ behaviors }),
+        body: JSON.stringify(payload),
         keepalive: true,
       }).catch((error) => {
         if (debug) {
           console.error('[AgentAware] fetch failed:', error)
         }
         // 失败时放回队列
-        queue.unshift(...behaviors)
+        queue.unshift(...items)
       })
     }
   }

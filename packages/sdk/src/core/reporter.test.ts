@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createReporter } from './reporter'
-import type { Behavior } from '../types'
+import type { Behavior, ErrorRecord } from '../types'
 
 const mockBehavior: Behavior = {
   id: 'test-1',
@@ -18,6 +18,16 @@ const mockBehavior: Behavior = {
     name: 'Submit',
   },
   data: {},
+}
+
+const mockError: ErrorRecord = {
+  id: 'error-1',
+  timestamp: Date.now(),
+  sessionId: 'session-1',
+  type: 'error',
+  message: 'Test error',
+  stack: 'Error: Test error\n  at test.js:1:1',
+  url: 'http://localhost:3000',
 }
 
 describe('createReporter', () => {
@@ -102,5 +112,67 @@ describe('createReporter', () => {
 
     expect(navigator.sendBeacon).toHaveBeenCalled()
     expect(fetch).toHaveBeenCalled()
+  })
+
+  it('上报行为数据时应该使用 behaviors 字段', () => {
+    const stringifySpy = vi.spyOn(JSON, 'stringify')
+    const reporter = createReporter('http://localhost:4100/behaviors')
+
+    reporter.report(mockBehavior)
+    reporter.flush()
+
+    // 检查 JSON.stringify 被调用时的参数
+    const calls = stringifySpy.mock.calls
+    const payloadCall = calls.find(call => call[0] && typeof call[0] === 'object' && ('behaviors' in call[0] || 'errors' in call[0]))
+    
+    expect(payloadCall).toBeDefined()
+    const payload = payloadCall![0]
+    expect(payload).toHaveProperty('behaviors')
+    expect(payload.behaviors).toHaveLength(1)
+    expect(payload).not.toHaveProperty('errors')
+    
+    stringifySpy.mockRestore()
+  })
+
+  it('上报错误数据时应该使用 errors 字段', () => {
+    const stringifySpy = vi.spyOn(JSON, 'stringify')
+    const reporter = createReporter('http://localhost:4100/behaviors')
+
+    reporter.report(mockError)
+    reporter.flush()
+
+    // 检查 JSON.stringify 被调用时的参数
+    const calls = stringifySpy.mock.calls
+    const payloadCall = calls.find(call => call[0] && typeof call[0] === 'object' && ('behaviors' in call[0] || 'errors' in call[0]))
+    
+    expect(payloadCall).toBeDefined()
+    const payload = payloadCall![0]
+    expect(payload).toHaveProperty('errors')
+    expect(payload.errors).toHaveLength(1)
+    expect(payload).not.toHaveProperty('behaviors')
+    
+    stringifySpy.mockRestore()
+  })
+
+  it('同时上报行为和错误数据时应该使用不同的字段', () => {
+    const stringifySpy = vi.spyOn(JSON, 'stringify')
+    const reporter = createReporter('http://localhost:4100/behaviors')
+
+    reporter.report(mockBehavior)
+    reporter.report(mockError)
+    reporter.flush()
+
+    // 检查 JSON.stringify 被调用时的参数
+    const calls = stringifySpy.mock.calls
+    const payloadCall = calls.find(call => call[0] && typeof call[0] === 'object' && ('behaviors' in call[0] || 'errors' in call[0]))
+    
+    expect(payloadCall).toBeDefined()
+    const payload = payloadCall![0]
+    expect(payload).toHaveProperty('behaviors')
+    expect(payload).toHaveProperty('errors')
+    expect(payload.behaviors).toHaveLength(1)
+    expect(payload.errors).toHaveLength(1)
+    
+    stringifySpy.mockRestore()
   })
 })
