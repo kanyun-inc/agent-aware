@@ -192,4 +192,85 @@ describe('HTTP API', () => {
       expect(json[0].interactionCount).toBe(2)
     })
   })
+
+  describe('CORS', () => {
+    it('应该允许所有来源的跨域请求', async () => {
+      const origin = 'https://local.zhenguanyu.com:3000'
+      const res = await app.request('/behaviors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': origin,
+        },
+        body: JSON.stringify({ behaviors: [] }),
+      })
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Access-Control-Allow-Origin')).toBe(origin)
+      expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+    })
+
+    it('应该支持预检请求（OPTIONS）', async () => {
+      const origin = 'https://local.zhenguanyu.com:3000'
+      const res = await app.request('/behaviors', {
+        method: 'OPTIONS',
+        headers: {
+          'Origin': origin,
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'Content-Type',
+        },
+      })
+
+      expect(res.status).toBe(204)
+      expect(res.headers.get('Access-Control-Allow-Origin')).toBe(origin)
+      expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+      expect(res.headers.get('Access-Control-Allow-Methods')).toContain('POST')
+      expect(res.headers.get('Access-Control-Allow-Headers')).toContain('Content-Type')
+    })
+
+    it('所有端点都应该支持 CORS', async () => {
+      const origin = 'https://local.zhenguanyu.com:3000'
+      const endpoints = [
+        '/behaviors',
+        '/health',
+        '/summary',
+        '/hotspots',
+      ]
+
+      for (const endpoint of endpoints) {
+        const res = await app.request(endpoint, {
+          method: 'GET',
+          headers: {
+            'Origin': origin,
+          },
+        })
+
+        expect(res.headers.get('Access-Control-Allow-Origin')).toBe(origin)
+        expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+      }
+    })
+
+    it('应该支持 credentials 模式（回显 Origin）', async () => {
+      const testOrigins = [
+        'http://localhost:3000',
+        'https://example.com',
+        'null', // file:// 协议
+      ]
+
+      for (const origin of testOrigins) {
+        const res = await app.request('/behaviors', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Origin': origin,
+          },
+          body: JSON.stringify({ behaviors: [] }),
+        })
+
+        expect(res.status).toBe(200)
+        expect(res.headers.get('Access-Control-Allow-Origin')).toBe(origin)
+        expect(res.headers.get('Access-Control-Allow-Credentials')).toBe('true')
+      }
+    })
+  })
 })

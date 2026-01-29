@@ -2,12 +2,42 @@ import { defineConfig } from '@rslib/core'
 
 export default defineConfig({
   lib: [
-    { format: 'esm', dts: { bundle: true } },
-    { format: 'cjs', dts: { bundle: true } },
+    {
+      format: 'esm',
+      output: {
+        distPath: {
+          root: './dist',
+        },
+        filename: {
+          js: 'index.js',
+        },
+      },
+      dts: { bundle: true },
+    },
+    {
+      format: 'cjs',
+      output: {
+        distPath: {
+          root: './dist',
+        },
+        filename: {
+          js: 'index.cjs',
+        },
+      },
+      dts: false,
+    },
     {
       format: 'umd',
       umdName: 'AgentAware',
-      dts: { bundle: true },
+      output: {
+        distPath: {
+          root: './dist',
+        },
+        filename: {
+          js: 'index.umd.js',
+        },
+      },
+      dts: false,
     },
   ],
   output: {

@@ -13,8 +13,16 @@ import type { BehaviorsRequest, BehaviorsResponse, HealthResponse, BehaviorType 
 export function createHttpApi(store: BehaviorStore): Hono {
   const app = new Hono()
 
-  // 启用 CORS
-  app.use('/*', cors())
+  // 启用 CORS - 允许所有来源（开发环境）
+  // 使用动态 origin 回显请求的 Origin，以支持 credentials 模式
+  app.use('/*', cors({
+    origin: (origin) => origin || '*', // 回显请求的 Origin，如果没有则用 *
+    allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type'],
+    exposeHeaders: ['Content-Length'],
+    maxAge: 600,
+    credentials: true, // 支持携带 Cookie
+  }))
 
   // ============ SDK 上报 ============
 

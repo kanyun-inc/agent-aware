@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Agent-aware RUM SDK - 用户行为采集库",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
