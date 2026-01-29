@@ -8,7 +8,7 @@ export type BehaviorType = 'click' | 'rage_click' | 'dead_click' | 'scroll' | 'h
 
 export type FrustrationType = 'rage_click' | 'dead_click' | 'error_click'
 
-// ============ 行为数据 ============
+// ============ 用户行为数据 ============
 
 export interface Behavior {
   id: string
@@ -25,6 +25,28 @@ export interface Behavior {
     y: number
   }
   data: ClickData | ScrollData | HoverData | EditData
+  semanticHints?: string[]
+}
+
+// ============ 错误记录（与 Behavior 同级）============
+
+export interface ErrorRecord {
+  id: string
+  timestamp: number
+  sessionId: string
+  type: 'error'
+  errorType: 'runtime' | 'unhandled_rejection' | 'console'
+  error: {
+    message: string
+    stack?: string
+    source?: 'source' | 'console'
+    handling?: 'handled' | 'unhandled'
+  }
+  context?: {
+    url?: string
+    line?: number
+    column?: number
+  }
   semanticHints?: string[]
 }
 
@@ -65,7 +87,7 @@ export interface Tracker {
 }
 
 export interface Reporter {
-  report: (behavior: Behavior) => void
+  report: (behavior: Behavior | ErrorRecord) => void
   flush: () => void
 }
 

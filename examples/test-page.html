@@ -113,6 +113,13 @@
     .refresh-btn:hover {
       background: #5a6268;
     }
+    .clear-btn {
+      background: #ffc107;
+      color: #333;
+    }
+    .clear-btn:hover {
+      background: #e0a800;
+    }
   </style>
 </head>
 <body>
@@ -148,14 +155,23 @@
     </div>
   </div>
 
+  <div class="section">
+    <h2>错误捕获测试</h2>
+    <button onclick="triggerRuntimeError()">触发运行时错误</button>
+    <button onclick="triggerPromiseError()">触发 Promise 异常</button>
+    <button onclick="triggerConsoleError()">触发 Console 错误</button>
+    <p>点击按钮触发不同类型的错误，错误会被自动捕获并上报</p>
+  </div>
+
   <div class="bottom-bar">
     <button class="refresh-btn" onclick="checkBehaviors()">📊 查看数据</button>
+    <button class="refresh-btn clear-btn" onclick="clearLogs()">🗑️ 清空日志</button>
     <button class="refresh-btn" onclick="location.reload()">🔄 刷新</button>
     <div id="status" class="status">SDK 状态: 加载中...</div>
   </div>
 
   <!-- 加载 SDK -->
-  <script src="../packages/sdk/dist/index.js"></script>
+  <script src="../packages/sdk/dist/index.umd.js"></script>
   <script>
     const statusEl = document.getElementById('status')
 
@@ -182,6 +198,48 @@
         console.error('[测试页面] 获取数据失败:', e)
         alert('获取数据失败: ' + e.message)
       }
+    }
+
+    async function clearLogs() {
+      const confirmed = confirm('确定要清空日志吗？\n\n这将会：\n✓ 清空控制台日志\n✓ 清空服务器存储的行为数据')
+      
+      if (!confirmed) return
+
+      try {
+        // 清空控制台
+        console.clear()
+        console.log('[测试页面] 控制台已清空')
+
+        // 清空服务器数据
+        const res = await fetch('http://localhost:4100/behaviors', {
+          method: 'DELETE'
+        })
+        
+        if (res.ok) {
+          console.log('[测试页面] 服务器数据已清空')
+          alert('✅ 清空成功！\n\n✓ 控制台日志已清空\n✓ 服务器数据已清空')
+          updateInteractionCount()
+        } else {
+          throw new Error('服务器响应错误: ' + res.status)
+        }
+      } catch (e) {
+        console.error('[测试页面] 清空失败:', e)
+        // 即使服务器清空失败，控制台也已清空
+        alert('⚠️ 部分清空成功\n\n✓ 控制台日志已清空\n✗ 服务器数据清空失败: ' + e.message)
+      }
+    }
+
+    // 错误测试函数
+    function triggerRuntimeError() {
+      throw new Error('这是一个测试用的运行时错误')
+    }
+
+    function triggerPromiseError() {
+      Promise.reject(new Error('这是一个测试用的 Promise 异常'))
+    }
+
+    function triggerConsoleError() {
+      console.error('这是一个测试用的 Console 错误', new Error('详细错误信息'))
     }
 
     // 初始化 SDK

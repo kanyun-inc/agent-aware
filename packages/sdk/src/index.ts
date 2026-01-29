@@ -9,8 +9,14 @@ import { createHoverTracker } from './trackers/hoverTracker'
 import { createEditTracker } from './trackers/editTracker'
 import { createReporter } from './core/reporter'
 import { createClickTracker } from './trackers/clickTracker'
+import { createErrorTracker } from './trackers/errorTracker'
 
-export type { AgentAwareConfig, Behavior, BehaviorType } from './types'
+export type {
+  AgentAwareConfig,
+  Behavior,
+  BehaviorType,
+  ErrorRecord,
+} from './types'
 
 // 单例管理
 let instance: AgentAwareInstance | null = null
@@ -20,6 +26,7 @@ interface AgentAwareInstance {
 }
 
 const DEFAULT_ENDPOINT = 'http://localhost:4100/behaviors'
+const ERROR_ENDPOINT = "http://localhost:4100/errors";
 
 /**
  * 初始化 Agent-aware RUM SDK
@@ -61,6 +68,7 @@ export function initAgentAware(config: AgentAwareConfig = {}): AgentAwareInstanc
 
   // 创建上报器
   const reporter = createReporter(endpoint, { debug })
+  const errorReporter = createReporter(ERROR_ENDPOINT, { debug });
 
   // 创建追踪器
   const trackers: Tracker[] = []
@@ -70,6 +78,7 @@ export function initAgentAware(config: AgentAwareConfig = {}): AgentAwareInstanc
     trackers.push(createScrollTracker(sessionId, reporter, { debug }))
     trackers.push(createHoverTracker(sessionId, reporter, { debug }))
     trackers.push(createEditTracker(sessionId, reporter, { debug }))
+    trackers.push(createErrorTracker(sessionId, errorReporter, { debug }));
   } catch (e) {
     if (debug) {
       console.error('[AgentAware] Failed to create trackers:', e)
@@ -84,6 +93,7 @@ export function initAgentAware(config: AgentAwareConfig = {}): AgentAwareInstanc
       tracker.stop()
     })
     reporter.flush()
+    errorReporter.flush();
     instance = null
 
     if (debug) {

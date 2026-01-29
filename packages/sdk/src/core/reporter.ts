@@ -3,7 +3,7 @@
  * 基于 SPEC-SDK-003
  */
 
-import type { Behavior, Reporter } from '../types'
+import type { Behavior, ErrorRecord, Reporter } from '../types'
 
 const DEBOUNCE_MS = 100
 const MAX_BATCH_SIZE = 50
@@ -17,10 +17,10 @@ export function createReporter(
   options: ReporterOptions = {}
 ): Reporter {
   const { debug = false } = options
-  const queue: Behavior[] = []
+  const queue: Array<Behavior | ErrorRecord> = []
   let flushTimer: ReturnType<typeof setTimeout> | null = null
 
-  function report(behavior: Behavior): void {
+  function report(behavior: Behavior | ErrorRecord): void {
     queue.push(behavior)
 
     if (debug) {
