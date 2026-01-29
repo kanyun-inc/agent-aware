@@ -3,7 +3,7 @@
  * 基于 SPEC-SDK-003
  */
 
-import type { Behavior, Reporter } from '../types'
+import type { Behavior, ErrorRecord, Reporter } from '../types'
 
 const DEBOUNCE_MS = 100
 const MAX_BATCH_SIZE = 50
@@ -17,10 +17,10 @@ export function createReporter(
   options: ReporterOptions = {}
 ): Reporter {
   const { debug = false } = options
-  const queue: Behavior[] = []
+  const queue: Array<Behavior | ErrorRecord> = []
   let flushTimer: ReturnType<typeof setTimeout> | null = null
 
-  function report(behavior: Behavior): void {
+  function report(behavior: Behavior | ErrorRecord): void {
     queue.push(behavior)
 
     if (debug) {
@@ -44,14 +44,23 @@ export function createReporter(
     }
 
     // 取出队列中的数据（最多 MAX_BATCH_SIZE 条）
-    const behaviors = queue.splice(0, MAX_BATCH_SIZE)
+    const items = queue.splice(0, MAX_BATCH_SIZE)
 
     if (debug) {
-      console.log('[AgentAware] sending', behaviors.length, 'behaviors')
+      console.log('[AgentAware] sending', items.length, 'items')
     }
 
+    // 区分 behaviors 和 errors
+    const behaviors = items.filter(item => item.type !== 'error') as Behavior[]
+    const errors = items.filter(item => item.type === 'error') as ErrorRecord[]
+
+    // 构造请求体（基于 endpoint 判断发送哪种数据）
+    const payload = endpoint.includes('/errors')
+      ? { errors: errors.length > 0 ? errors : (items as ErrorRecord[]) }
+      : { behaviors: behaviors.length > 0 ? behaviors : (items as Behavior[]) }
+
     // 优先使用 sendBeacon
-    const blob = new Blob([JSON.stringify({ behaviors })], {
+    const blob = new Blob([JSON.stringify(payload)], {
       type: 'application/json',
     })
 
@@ -66,14 +75,14 @@ export function createReporter(
       fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ behaviors }),
+        body: JSON.stringify(payload),
         keepalive: true,
       }).catch((error) => {
         if (debug) {
           console.error('[AgentAware] fetch failed:', error)
         }
         // 失败时放回队列
-        queue.unshift(...behaviors)
+        queue.unshift(...items)
       })
     }
   }

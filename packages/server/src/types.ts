@@ -8,6 +8,8 @@ export type BehaviorType = 'click' | 'rage_click' | 'dead_click' | 'scroll' | 'h
 
 export type FrustrationType = 'rage_click' | 'dead_click' | 'error_click'
 
+export type ErrorType = 'runtime' | 'unhandled_rejection' | 'console'
+
 // ============ 行为数据 ============
 
 export interface Behavior {
@@ -67,4 +69,53 @@ export interface BehaviorsResponse {
 export interface HealthResponse {
   status: 'ok'
   totalInteractions: number
+}
+
+// ============ 错误相关 ============
+
+export interface ErrorRecord {
+  id: string
+  timestamp: number
+  sessionId: string
+  type: 'error'
+  errorType: ErrorType
+  error: {
+    message: string
+    stack?: string
+    source?: 'source' | 'console'
+    handling?: 'handled' | 'unhandled'
+  }
+  context?: {
+    url?: string
+    line?: number
+    column?: number
+  }
+  semanticHints?: string[]
+}
+
+export interface ErrorStorageData {
+  version: string
+  errors: ErrorRecord[]
+}
+
+export interface ErrorQueryOptions {
+  errorTypes?: ErrorType[]
+  limit?: number
+}
+
+export interface ErrorSummary {
+  totalErrors: number
+  runtimeErrorCount: number
+  unhandledRejectionCount: number
+  consoleErrorCount: number
+  recentErrors: ErrorRecord[]
+}
+
+export interface ErrorsRequest {
+  errors: ErrorRecord[]
+}
+
+export interface ErrorsResponse {
+  ok: boolean
+  count: number
 }

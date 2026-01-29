@@ -8,9 +8,18 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { BehaviorStore } from './store/behaviorStore'
-import type { BehaviorsRequest, BehaviorsResponse, HealthResponse, BehaviorType } from './types'
+import type { ErrorStore } from './store/errorStore'
+import type {
+  BehaviorsRequest,
+  BehaviorsResponse,
+  HealthResponse,
+  BehaviorType,
+  ErrorsRequest,
+  ErrorsResponse,
+  ErrorType,
+} from './types'
 
-export function createHttpApi(store: BehaviorStore): Hono {
+export function createHttpApi(store: BehaviorStore, errorStore?: ErrorStore): Hono {
   const app = new Hono()
 
   // 启用 CORS - 允许所有来源（开发环境）
@@ -91,6 +100,55 @@ export function createHttpApi(store: BehaviorStore): Hono {
     await store.clear()
     return c.json({ ok: true })
   })
+
+  // ============ Errors API ============
+
+  if (errorStore) {
+    // POST /errors - 接收错误数据
+    app.post('/errors', async (c) => {
+      try {
+        const body = await c.req.json<ErrorsRequest>()
+        const errors = body.errors || []
+
+        await errorStore.addBatch(errors)
+
+        const response: ErrorsResponse = {
+          ok: true,
+          count: errors.length,
+        }
+
+        return c.json(response)
+      } catch (error) {
+        return c.json({ ok: false, error: 'Invalid JSON' }, 400)
+      }
+    })
+
+    // GET /errors - 查询错误数据
+    app.get('/errors', async (c) => {
+      const errorTypesParam = c.req.query('errorTypes')
+      const limitParam = c.req.query('limit')
+
+      const errorTypes = errorTypesParam
+        ? (errorTypesParam.split(',') as ErrorType[])
+        : undefined
+      const limit = limitParam ? parseInt(limitParam, 10) : undefined
+
+      const errors = await errorStore.query({ errorTypes, limit })
+      return c.json(errors)
+    })
+
+    // GET /errors/summary - 获取错误摘要
+    app.get('/errors/summary', async (c) => {
+      const summary = await errorStore.getSummary()
+      return c.json(summary)
+    })
+
+    // DELETE /errors - 清空错误数据
+    app.delete('/errors', async (c) => {
+      await errorStore.clear()
+      return c.json({ ok: true })
+    })
+  }
 
   return app
 }
