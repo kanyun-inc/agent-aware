@@ -24,8 +24,8 @@
   "homepage": "https://github.com/kanyun-inc/agent-aware/tree/main/packages/server#readme",
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js",
+    "dev": "tsx watch src/cli.ts start",
+    "start": "node dist/cli.js start",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

@@ -1,46 +1,21 @@
 /**
- * Agent-aware Server 入口
- * HTTP Server (Hono)
- * 基于 SPEC-SRV-005: Detector 架构重构
+ * Agent-aware Server 包入口
+ * 基于 SPEC-SRV-006: Package Entry Architecture
+ * 
+ * 此文件只导出公共 API，不执行任何代码（无副作用）
+ * 服务器启动入口请使用 cli.ts
  */
 
-import { serve } from '@hono/node-server'
-import { createHttpApi } from './httpApi'
-import { BehaviorStore } from './store/behaviorStore'
-import { ErrorStore } from './store/errorStore'
-import { BehaviorDetector } from './detector/behaviorDetector'
-import { AlertDetector } from './detector/alertDetector'
+// 核心函数
+export { createHttpApi } from './httpApi'
 
-const PORT = 4100
-const DATA_DIR = './data'
-// 检测器输出到用户项目根目录
-// 优先级：环境变量 > process.cwd()
-const PROJECT_ROOT = process.env.USER_PROJECT_ROOT || process.cwd()
+// 存储
+export { BehaviorStore } from './store/behaviorStore'
+export { ErrorStore } from './store/errorStore'
 
-const store = new BehaviorStore(DATA_DIR)
-const errorStore = new ErrorStore(DATA_DIR)
-const behaviorDetector = new BehaviorDetector(PROJECT_ROOT)
-const alertDetector = new AlertDetector(PROJECT_ROOT)
-const app = createHttpApi(store, errorStore, behaviorDetector, alertDetector)
+// 检测器
+export { BehaviorDetector } from './detector/behaviorDetector'
+export { AlertDetector } from './detector/alertDetector'
 
-console.log(`[AgentAware Server] Starting on port ${PORT}...`)
-console.log(`[AgentAware Server] Project root: ${PROJECT_ROOT}`)
-console.log(`[AgentAware Server] Output directory: ${PROJECT_ROOT}/.agent-aware/`)
-
-serve({
-  fetch: app.fetch,
-  port: PORT,
-})
-
-console.log(`[AgentAware Server] HTTP API listening on http://localhost:${PORT}`)
-console.log(`[AgentAware Server] Endpoints:`)
-console.log(`  POST   /behaviors       - 接收行为数据`)
-console.log(`  GET    /behaviors       - 查询行为数据`)
-console.log(`  GET    /summary         - 获取行为摘要`)
-console.log(`  GET    /hotspots        - 获取交互热点`)
-console.log(`  GET    /health          - 健康检查`)
-console.log(`  DELETE /behaviors       - 清空行为数据`)
-console.log(`  POST   /errors          - 接收错误数据`)
-console.log(`  GET    /errors          - 查询错误数据`)
-console.log(`  GET    /errors/summary  - 获取错误摘要`)
-console.log(`  DELETE /errors          - 清空错误数据`)
+// 类型
+export type { Behavior, Summary, Hotspot, ErrorRecord, ErrorSummary } from './types'
