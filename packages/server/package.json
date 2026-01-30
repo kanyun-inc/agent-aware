@@ -8,12 +8,27 @@
   "bin": {
     "agent-aware-server": "./dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kanyun-inc/agent-aware.git",
+    "directory": "packages/server"
+  },
+  "author": "Kanyun Inc",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kanyun-inc/agent-aware/issues"
+  },
+  "homepage": "https://github.com/kanyun-inc/agent-aware/tree/main/packages/server#readme",
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
