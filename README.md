@@ -68,6 +68,9 @@ pnpm test        # Run tests
 ```
 agent-aware/
 ├── skill/           # AI Agent usage guide
+│   ├── SKILL.md     # Complete usage guide (basic + advanced)
+│   ├── README.md    # Skill documentation
+│   └── scripts/     # Monitoring scripts
 ├── packages/
 │   ├── sdk/         # Browser SDK (behavior tracking)
 │   └── server/      # HTTP Server (storage + query)

@@ -9,6 +9,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { BehaviorStore } from './store/behaviorStore'
 import type { ErrorStore } from './store/errorStore'
+import type { IssueDetector } from './detector/issueDetector'
 import type {
   BehaviorsRequest,
   BehaviorsResponse,
@@ -19,7 +20,11 @@ import type {
   ErrorType,
 } from './types'
 
-export function createHttpApi(store: BehaviorStore, errorStore?: ErrorStore): Hono {
+export function createHttpApi(
+  store: BehaviorStore,
+  errorStore?: ErrorStore,
+  issueDetector?: IssueDetector
+): Hono {
   const app = new Hono()
 
   // 启用 CORS - 允许所有来源（开发环境）
@@ -42,6 +47,15 @@ export function createHttpApi(store: BehaviorStore, errorStore?: ErrorStore): Ho
       const behaviors = body.behaviors || []
 
       await store.addBatch(behaviors)
+
+      // 触发问题检测（不阻塞响应）
+      if (issueDetector && errorStore) {
+        const summary = await store.getSummary()
+        const errorSummary = await errorStore.getSummary()
+        issueDetector.checkAndAlert(summary, errorSummary).catch((err) => {
+          console.error('Issue detection failed:', err)
+        })
+      }
 
       const response: BehaviorsResponse = {
         ok: true,
@@ -112,6 +126,15 @@ export function createHttpApi(store: BehaviorStore, errorStore?: ErrorStore): Ho
 
         await errorStore.addBatch(errors)
 
+        // 触发问题检测（不阻塞响应）
+        if (issueDetector) {
+          const summary = await store.getSummary()
+          const errorSummary = await errorStore.getSummary()
+          issueDetector.checkAndAlert(summary, errorSummary).catch((err) => {
+            console.error('Issue detection failed:', err)
+          })
+        }
+
         const response: ErrorsResponse = {
           ok: true,
           count: errors.length,
@@ -146,6 +169,22 @@ export function createHttpApi(store: BehaviorStore, errorStore?: ErrorStore): Ho
     // DELETE /errors - 清空错误数据
     app.delete('/errors', async (c) => {
       await errorStore.clear()
+      return c.json({ ok: true })
+    })
+  }
+
+  // ============ Issues API ============
+
+  if (issueDetector) {
+    // GET /issues - 获取累积的问题列表
+    app.get('/issues', async (c) => {
+      const issues = await issueDetector.getIssues()
+      return c.json(issues)
+    })
+
+    // DELETE /issues - 清空问题
+    app.delete('/issues', async (c) => {
+      await issueDetector.clearIssues()
       return c.json({ ok: true })
     })
   }

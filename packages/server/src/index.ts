@@ -7,13 +7,15 @@ import { serve } from '@hono/node-server'
 import { createHttpApi } from './httpApi'
 import { BehaviorStore } from './store/behaviorStore'
 import { ErrorStore } from './store/errorStore'
+import { IssueDetector } from './detector/issueDetector'
 
 const PORT = 4100
 const DATA_DIR = './data'
 
 const store = new BehaviorStore(DATA_DIR)
 const errorStore = new ErrorStore(DATA_DIR)
-const app = createHttpApi(store, errorStore)
+const issueDetector = new IssueDetector(DATA_DIR)
+const app = createHttpApi(store, errorStore, issueDetector)
 
 console.log(`[AgentAware Server] Starting on port ${PORT}...`)
 

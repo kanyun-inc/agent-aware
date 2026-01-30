@@ -10,13 +10,17 @@
 import { serve } from '@hono/node-server'
 import { createHttpApi } from './httpApi.js'
 import { BehaviorStore } from './store/behaviorStore.js'
+import { ErrorStore } from './store/errorStore.js'
+import { IssueDetector } from './detector/issueDetector.js'
 
 const HTTP_PORT = 4100
 const DATA_DIR = './data'
 
 function start() {
   const store = new BehaviorStore(DATA_DIR)
-  const app = createHttpApi(store)
+  const errorStore = new ErrorStore(DATA_DIR)
+  const issueDetector = new IssueDetector(DATA_DIR)
+  const app = createHttpApi(store, errorStore, issueDetector)
 
   console.log(`
 ╔═══════════════════════════════════════════════════════════╗

@@ -67,6 +67,9 @@ pnpm test        # 运行测试
 ```
 agent-aware/
 ├── skill/           # AI Agent 使用指南
+│   ├── SKILL.md     # 完整使用指南（基础 + 高级）
+│   ├── README.md    # Skill 说明文档
+│   └── scripts/     # 监控脚本
 ├── packages/
 │   ├── sdk/         # 浏览器 SDK（行为追踪）
 │   └── server/      # HTTP Server（存储 + 查询）
