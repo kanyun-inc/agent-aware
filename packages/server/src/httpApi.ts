@@ -1,6 +1,6 @@
 /**
  * HTTP API
- * 基于 SPEC-SRV-001
+ * 基于 SPEC-SRV-001 和 SPEC-SRV-005
  * 
  * 支持 SDK 上报和 AI 查询
  */
@@ -9,7 +9,8 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { BehaviorStore } from './store/behaviorStore'
 import type { ErrorStore } from './store/errorStore'
-import type { IssueDetector } from './detector/issueDetector'
+import type { BehaviorDetector } from './detector/behaviorDetector'
+import type { AlertDetector } from './detector/alertDetector'
 import type {
   BehaviorsRequest,
   BehaviorsResponse,
@@ -23,7 +24,8 @@ import type {
 export function createHttpApi(
   store: BehaviorStore,
   errorStore?: ErrorStore,
-  issueDetector?: IssueDetector
+  behaviorDetector?: BehaviorDetector,
+  alertDetector?: AlertDetector
 ): Hono {
   const app = new Hono()
 
@@ -48,12 +50,11 @@ export function createHttpApi(
 
       await store.addBatch(behaviors)
 
-      // 触发问题检测（不阻塞响应）
-      if (issueDetector && errorStore) {
+      // 触发行为检测（不阻塞响应）
+      if (behaviorDetector) {
         const summary = await store.getSummary()
-        const errorSummary = await errorStore.getSummary()
-        issueDetector.checkAndAlert(summary, errorSummary).catch((err) => {
-          console.error('Issue detection failed:', err)
+        behaviorDetector.checkAndAlert(summary).catch((err) => {
+          console.error('Behavior detection failed:', err)
         })
       }
 
@@ -126,12 +127,11 @@ export function createHttpApi(
 
         await errorStore.addBatch(errors)
 
-        // 触发问题检测（不阻塞响应）
-        if (issueDetector) {
-          const summary = await store.getSummary()
+        // 触发错误检测（不阻塞响应）
+        if (alertDetector) {
           const errorSummary = await errorStore.getSummary()
-          issueDetector.checkAndAlert(summary, errorSummary).catch((err) => {
-            console.error('Issue detection failed:', err)
+          alertDetector.checkAndAlert(errorSummary).catch((err) => {
+            console.error('Error detection failed:', err)
           })
         }
 
@@ -169,22 +169,6 @@ export function createHttpApi(
     // DELETE /errors - 清空错误数据
     app.delete('/errors', async (c) => {
       await errorStore.clear()
-      return c.json({ ok: true })
-    })
-  }
-
-  // ============ Issues API ============
-
-  if (issueDetector) {
-    // GET /issues - 获取累积的问题列表
-    app.get('/issues', async (c) => {
-      const issues = await issueDetector.getIssues()
-      return c.json(issues)
-    })
-
-    // DELETE /issues - 清空问题
-    app.delete('/issues', async (c) => {
-      await issueDetector.clearIssues()
       return c.json({ ok: true })
     })
   }

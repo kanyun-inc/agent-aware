@@ -1,8 +1,10 @@
 # SPEC-SRV-004: Issue Detector
 
-> 状态: accepted  
+> 状态: deprecated  
 > 创建: 2026-01-30  
 > 更新: 2026-01-30
+> 
+> **已废弃**：被 [SRV-005](005-detector-refactor.md) 替代
 
 ## 背景
 

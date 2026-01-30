@@ -1,13 +1,16 @@
 /**
- * HTTP API 集成测试 - Issue Detector
- * 测试 POST /behaviors 和 POST /errors 触发问题检测
+ * HTTP API 集成测试 - Detector 架构重构
+ * 基于 SPEC-SRV-005
+ * 测试 POST /behaviors 触发 BehaviorDetector
+ * 测试 POST /errors 触发 AlertDetector
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { createHttpApi } from './httpApi'
 import { BehaviorStore } from './store/behaviorStore'
 import { ErrorStore } from './store/errorStore'
-import { IssueDetector } from './detector/issueDetector'
+import { BehaviorDetector } from './detector/behaviorDetector'
+import { AlertDetector } from './detector/alertDetector'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
@@ -15,25 +18,27 @@ import type { Behavior, ErrorRecord } from './types'
 
 const TEST_DATA_DIR = join(process.cwd(), 'test-integration-data')
 
-describe('HTTP API + IssueDetector Integration', () => {
+describe('HTTP API + Detector Integration', () => {
   let app: ReturnType<typeof createHttpApi>
   let store: BehaviorStore
   let errorStore: ErrorStore
-  let issueDetector: IssueDetector
+  let behaviorDetector: BehaviorDetector
+  let alertDetector: AlertDetector
 
   beforeEach(async () => {
     await mkdir(TEST_DATA_DIR, { recursive: true })
     store = new BehaviorStore(TEST_DATA_DIR)
     errorStore = new ErrorStore(TEST_DATA_DIR)
-    issueDetector = new IssueDetector(TEST_DATA_DIR)
-    app = createHttpApi(store, errorStore, issueDetector)
+    behaviorDetector = new BehaviorDetector(TEST_DATA_DIR)
+    alertDetector = new AlertDetector(TEST_DATA_DIR)
+    app = createHttpApi(store, errorStore, behaviorDetector, alertDetector)
   })
 
   afterEach(async () => {
     await rm(TEST_DATA_DIR, { recursive: true, force: true })
   })
 
-  it('应该在收到错误后写入 alert.json', async () => {
+  it('应该在收到错误后写入 error.json', async () => {
     const error: ErrorRecord = {
       id: 'error-1',
       timestamp: Date.now(),
@@ -57,15 +62,16 @@ describe('HTTP API + IssueDetector Integration', () => {
     // 等待异步检测完成
     await new Promise((resolve) => setTimeout(resolve, 100))
 
-    const alertPath = join(TEST_DATA_DIR, '.agent-aware', 'alert.json')
-    expect(existsSync(alertPath)).toBe(true)
+    const errorPath = join(TEST_DATA_DIR, '.agent-aware', 'error.json')
+    expect(existsSync(errorPath)).toBe(true)
 
-    const alert = JSON.parse(await readFile(alertPath, 'utf-8'))
+    const alert = JSON.parse(await readFile(errorPath, 'utf-8'))
     expect(alert.severity).toBe('critical')
     expect(alert.type).toBe('error')
+    expect(alert.summary).toContain('运行时错误')
   })
 
-  it('应该在挫折指数高时写入 issues.json', async () => {
+  it('应该在挫折指数高时写入 behavior.json', async () => {
     // 模拟 10 次 rage_click
     const behaviors: Behavior[] = Array.from({ length: 10 }, (_, i) => ({
       id: `behavior-${i}`,
@@ -91,16 +97,28 @@ describe('HTTP API + IssueDetector Integration', () => {
     // 等待异步检测完成
     await new Promise((resolve) => setTimeout(resolve, 100))
 
-    const issuesPath = join(TEST_DATA_DIR, '.agent-aware', 'issues.json')
-    expect(existsSync(issuesPath)).toBe(true)
+    const behaviorPath = join(TEST_DATA_DIR, '.agent-aware', 'behavior.json')
+    expect(existsSync(behaviorPath)).toBe(true)
 
-    const issuesData = JSON.parse(await readFile(issuesPath, 'utf-8'))
-    expect(issuesData.issues.length).toBeGreaterThan(0)
-    expect(issuesData.issues[0].type).toBe('frustration')
+    const behaviorData = JSON.parse(await readFile(behaviorPath, 'utf-8'))
+    expect(behaviorData.severity).toBe('critical')
+    expect(behaviorData.type).toBe('frustration')
+    expect(behaviorData.summary).toContain('挫折行为')
   })
 
-  it('GET /issues 应该返回累积的问题', async () => {
-    // 先触发一些问题
+  it('检测失败不影响 API 响应', async () => {
+    // 使用无效路径的检测器（会导致写入失败）
+    const invalidBehaviorDetector = new BehaviorDetector(
+      '/invalid/path/that/does/not/exist'
+    )
+    const invalidAlertDetector = new AlertDetector('/invalid/path/that/does/not/exist')
+    const invalidApp = createHttpApi(
+      store,
+      errorStore,
+      invalidBehaviorDetector,
+      invalidAlertDetector
+    )
+
     const error: ErrorRecord = {
       id: 'error-1',
       timestamp: Date.now(),
@@ -110,72 +128,40 @@ describe('HTTP API + IssueDetector Integration', () => {
       error: { message: 'Test error' },
     }
 
-    await app.request('/errors', {
+    // API 应该正常响应，即使检测器写入失败
+    const res = await invalidApp.request('/errors', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ errors: [error] }),
     })
 
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    const res = await app.request('/issues')
     expect(res.status).toBe(200)
-
     const data = await res.json()
-    expect(data.issues).toBeDefined()
-    expect(data.summary).toBeDefined()
-    expect(data.summary.critical).toBeGreaterThan(0)
+    expect(data.ok).toBe(true)
   })
 
-  it('DELETE /issues 应该清空问题文件', async () => {
-    // 先触发问题
-    const error: ErrorRecord = {
-      id: 'error-1',
-      timestamp: Date.now(),
-      sessionId: 'session-1',
-      type: 'error',
-      errorType: 'runtime',
-      error: { message: 'Test error' },
-    }
-
-    await app.request('/errors', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ errors: [error] }),
-    })
-
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    const alertPath = join(TEST_DATA_DIR, '.agent-aware', 'alert.json')
-    const issuesPath = join(TEST_DATA_DIR, '.agent-aware', 'issues.json')
-
-    expect(existsSync(alertPath)).toBe(true)
-    expect(existsSync(issuesPath)).toBe(true)
-
-    // 清空
-    const res = await app.request('/issues', { method: 'DELETE' })
-    expect(res.status).toBe(200)
-
-    expect(existsSync(alertPath)).toBe(false)
-    expect(existsSync(issuesPath)).toBe(false)
-  })
-
-  describe('【Bug Fix】Issue 文件输出位置', () => {
-    it('应该将 issue 文件写入到 server 包根目录（./），而不是 DATA_DIR', async () => {
-      // 正确的方式：使用 './' 作为输出目录
-      const correctDetector = new IssueDetector('./')
-      const correctApp = createHttpApi(store, errorStore, correctDetector)
+  describe('文件输出位置', () => {
+    it('应该将检测文件写入到指定的项目根目录', async () => {
+      // 使用 process.cwd() 作为项目根目录
+      const projectRootDetector = new BehaviorDetector(process.cwd())
+      const projectRootAlertDetector = new AlertDetector(process.cwd())
+      const projectApp = createHttpApi(
+        store,
+        errorStore,
+        projectRootDetector,
+        projectRootAlertDetector
+      )
 
       const error: ErrorRecord = {
-        id: 'error-correct-path',
+        id: 'error-project-root',
         timestamp: Date.now(),
-        sessionId: 'session-correct',
+        sessionId: 'session-project',
         type: 'error',
         errorType: 'runtime',
-        error: { message: 'Test error with correct path' },
+        error: { message: 'Test error with project root' },
       }
 
-      await correctApp.request('/errors', {
+      await projectApp.request('/errors', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ errors: [error] }),
@@ -183,19 +169,16 @@ describe('HTTP API + IssueDetector Integration', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      // 验证文件在 server 包根目录（当前工作目录）的 .agent-aware 下
-      const correctAlertPath = join(process.cwd(), '.agent-aware', 'alert.json')
-      const correctIssuesPath = join(process.cwd(), '.agent-aware', 'issues.json')
+      // 验证文件在项目根目录的 .agent-aware 下
+      const errorPath = join(process.cwd(), '.agent-aware', 'error.json')
+      expect(existsSync(errorPath)).toBe(true)
 
-      expect(existsSync(correctAlertPath)).toBe(true)
-      expect(existsSync(correctIssuesPath)).toBe(true)
-
-      // 验证不会写入到 TEST_DATA_DIR（模拟 DATA_DIR）
-      const wrongPath = join(TEST_DATA_DIR, '.agent-aware', 'alert.json')
+      // 验证不会写入到 TEST_DATA_DIR
+      const wrongPath = join(TEST_DATA_DIR, '.agent-aware', 'error.json')
       expect(existsSync(wrongPath)).toBe(false)
 
       // 清理
-      await correctDetector.clearIssues()
+      await rm(join(process.cwd(), '.agent-aware'), { recursive: true, force: true })
     })
   })
 })

@@ -1,8 +1,10 @@
 # SPEC-SKILL-001: Monitor Script
 
-> 状态: accepted  
+> 状态: deprecated  
 > 创建: 2026-01-30  
 > 更新: 2026-01-30
+> 
+> **已废弃**：被 [SKILL-002](002-monitor-refactor.md) 替代（适配 Detector 架构重构）
 
 ## 背景
 

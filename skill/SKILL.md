@@ -12,7 +12,7 @@ description: Monitor user behavior and errors in web applications, automatically
 # 前置条件
 
 使用前确保已安装：
-- **Server**：`npm install -g @reskill/agent-aware-server` 
+- **Server**：`npm install -g @reskill/agent-aware-server@latest` （推荐 v0.2.0+）
 - **SDK**：`npm install --save-dev @reskill/agent-aware`（在用户项目中）
 
 检查方式：`npm list -g @reskill/agent-aware-server` 和 `npm list @reskill/agent-aware`
@@ -37,8 +37,9 @@ description: Monitor user behavior and errors in web applications, automatically
 
 ```bash
 npx agent-aware-server start
-# 启动后监听 http://localhost:4100
-# 验证：curl http://localhost:4100/health
+
+# 验证
+curl http://localhost:4100/health
 ```
 
 ## 第二步：初始化 SDK
@@ -86,10 +87,10 @@ curl http://localhost:4100/errors  # 查看错误
 # 1. 确认 Server 运行
 curl -s http://localhost:4100/health || echo "请运行: npx agent-aware-server start"
 
-# 2. 清空旧数据
+# 2. 清空旧数据和检测文件
 curl -X DELETE http://localhost:4100/behaviors
 curl -X DELETE http://localhost:4100/errors
-curl -X DELETE http://localhost:4100/issues
+rm -f .agent-aware/error.json .agent-aware/behavior.json
 ```
 
 ### 阶段 2：启动监控
@@ -110,7 +111,7 @@ curl -X DELETE http://localhost:4100/issues
 执行监听脚本：
 
 ```bash
-bash skill/scripts/monitor.sh 120 5
+bash scripts/monitor-v2.sh 120 5
 ```
 
 **脚本参数**：
@@ -118,26 +119,45 @@ bash skill/scripts/monitor.sh 120 5
 - `5`：每 5 秒检查一次
 
 **脚本行为**：
-- 循环检查 `.agent-aware/alert.json` 是否存在
+- 循环检查当前目录的 `.agent-aware/error.json` 和 `.agent-aware/behavior.json`
+- 优先检测 error.json（运行时错误，Critical）
 - 发现文件 → 输出内容并 `exit 1`
 - 超时无问题 → `exit 0`
 
 ### 阶段 3：处理问题（脚本 exit 1 时）
 
 ```bash
-# 1. 获取问题详情
-ALERT=$(cat .agent-aware/alert.json)
-ERRORS=$(curl -s "http://localhost:4100/errors?limit=5")
-BEHAVIORS=$(curl -s "http://localhost:4100/behaviors?types=rage_click,dead_click&limit=5")
-
-# 2. 分析并修复
-# 根据 alert.type 判断问题类型：
-#   - "error": 运行时错误，检查 stack trace
-#   - "frustration": 用户挫折，检查交互逻辑
-
-# 3. 删除标记，重新监控
-rm .agent-aware/alert.json
-curl -X DELETE http://localhost:4100/behaviors
+# 1. 检查问题类型并获取详情
+if [ -f ".agent-aware/error.json" ]; then
+  # 运行时错误（优先级高）
+  ERROR_ALERT=$(cat .agent-aware/error.json)
+  ERRORS=$(curl -s "http://localhost:4100/errors?limit=5")
+  
+  echo "🚨 检测到运行时错误！"
+  echo "$ERROR_ALERT" | jq '.'
+  
+  # 2. 分析并修复
+  # 检查 error.stack、error.message 定位问题
+  
+  # 3. 删除标记，清空数据
+  rm -f .agent-aware/error.json
+  curl -X DELETE http://localhost:4100/errors
+  
+elif [ -f ".agent-aware/behavior.json" ]; then
+  # 用户行为问题
+  BEHAVIOR_ALERT=$(cat .agent-aware/behavior.json)
+  BEHAVIORS=$(curl -s "http://localhost:4100/behaviors?types=rage_click,dead_click&limit=5")
+  
+  echo "⚠️ 检测到用户行为问题！"
+  echo "$BEHAVIOR_ALERT" | jq '.'
+  
+  # 2. 分析并修复
+  # 检查 rageClickCount、deadClickCount、frustrationScore
+  
+  # 3. 删除标记，清空数据
+  rm -f .agent-aware/behavior.json
+  curl -X DELETE http://localhost:4100/behaviors
+fi
 ```
 
 告诉用户刷新页面继续测试。
@@ -148,7 +168,10 @@ curl -X DELETE http://localhost:4100/behaviors
 # 获取完整数据
 SUMMARY=$(curl -s http://localhost:4100/summary)
 ERROR_SUMMARY=$(curl -s "http://localhost:4100/errors/summary")
-ISSUES=$(curl -s http://localhost:4100/issues)
+
+# 计算总体健康度
+FRUSTRATION_SCORE=$(echo "$SUMMARY" | jq '.frustrationScore')
+TOTAL_ERRORS=$(echo "$ERROR_SUMMARY" | jq '.totalErrors')
 ```
 
 生成报告：
@@ -156,10 +179,11 @@ ISSUES=$(curl -s http://localhost:4100/issues)
 ```
 📊 监控报告
 
-✅ 运行状况：[frustrationScore]/100
-⚠️ 发现问题：[issues.summary.critical] 个严重问题
+✅ 运行状况：挫折指数 [frustrationScore]/100
+🚨 错误统计：[totalErrors] 个运行时错误
+⚠️ 行为问题：[rageClickCount] 个愤怒点击，[deadClickCount] 个死点击
 
-[详细问题列表]
+综合评价：[良好/需要优化/存在问题]
 
 需要修复吗？
 ```
@@ -179,21 +203,29 @@ ISSUES=$(curl -s http://localhost:4100/issues)
 ## 监控脚本
 
 ```bash
-bash skill/scripts/monitor.sh 120 5  # 监听 120 秒，每 5 秒检查
+bash scripts/monitor-v2.sh 120 5
 ```
+
+**特性**：
+- 监听当前目录的 `.agent-aware/` 目录
+- 同时检测 `error.json` 和 `behavior.json`
+- 优先处理错误（error > behavior）
+
+📖 详细说明：**[README.md](./README.md)**
 
 ## 常见场景
 
-- **JS 错误**：查看 `error.stack`，修复后删除 `alert.json` 重新监控
+- **JS 错误**：查看 `error.json` 中的 `error.stack`，修复后删除文件重新监控
 - **愤怒点击**：添加 `disabled={isLoading}` 和 spinner
 - **网络错误**：检查 API URL，添加错误处理
+- **挫折指数高**：检查 `behavior.json` 中的 `rageClickCount` 和 `deadClickCount`
 
 ## 用户沟通话术
 
 **开始监控**：
 
 ```
-✅ 代码已生成！我会持续监控页面问题 2 分钟。
+✅ 代码已生成！我会持续监控 2 分钟。
 
 请测试页面，发现问题会立即修复。
 ```
@@ -257,18 +289,20 @@ Server 启动后我会自动开始监控。
 
 ## 进阶：用户下次对话时主动检查
 
-Server 持续累积问题到 `issues.json`。
+Server 的 Detector 会实时检测问题并输出文件。
 
-**在每次对话开始时**，自动执行：
+**在每次对话开始时**，自动检查：
 
 ```bash
-if [ -f ".agent-aware/issues.json" ]; then
-  ISSUES=$(cat .agent-aware/issues.json)
-  CRITICAL_COUNT=$(echo "$ISSUES" | jq '.summary.critical')
-  
-  if [ "$CRITICAL_COUNT" -gt 0 ]; then
-    echo "⚠️ 发现 $CRITICAL_COUNT 个问题，要先修复吗？"
-  fi
+# 检查是否有未处理的问题
+if [ -f ".agent-aware/error.json" ]; then
+  ERROR_ALERT=$(cat .agent-aware/error.json)
+  echo "🚨 发现运行时错误，要先修复吗？"
+  echo "$ERROR_ALERT" | jq '.summary'
+elif [ -f ".agent-aware/behavior.json" ]; then
+  BEHAVIOR_ALERT=$(cat .agent-aware/behavior.json)
+  echo "⚠️ 发现用户行为问题，要先修复吗？"
+  echo "$BEHAVIOR_ALERT" | jq '.summary'
 fi
 ```
 
