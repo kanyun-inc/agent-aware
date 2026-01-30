@@ -1,20 +1,33 @@
 {
-  "name": "agent-aware-skill",
+  "name": "agent-aware",
   "version": "0.1.0",
   "private": true,
   "description": "Agent-aware - Bridging the Gap Between Agents and User Actions.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kanyun-inc/agent-aware.git"
+  },
+  "author": "Kanyun Inc",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kanyun-inc/agent-aware/issues"
+  },
+  "homepage": "https://github.com/kanyun-inc/agent-aware#readme",
   "scripts": {
     "dev": "pnpm --filter @reskill/agent-aware-server dev",
     "dev:server": "pnpm --filter @reskill/agent-aware-server dev",
     "dev:example": "node examples/server.js",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "test:watch": "pnpm -r test:watch"
+    "test:watch": "pnpm -r test:watch",
+    "typecheck": "pnpm -r typecheck",
+    "release": "pnpm publish -r --access public"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "serve": "^14.2.5"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "devDependencies": {
-    "serve": "^14.2.5"
   }
 }
