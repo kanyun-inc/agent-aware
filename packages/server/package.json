@@ -1,6 +1,6 @@
 {
   "name": "@reskill/agent-aware-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Agent-aware RUM Server - HTTP API for user behavior tracking",
   "type": "module",
   "main": "./dist/index.js",
