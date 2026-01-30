@@ -45,5 +45,8 @@
     "agent-aware",
     "user-behavior",
     "ai"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

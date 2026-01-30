@@ -47,5 +47,8 @@
     "user-monitoring",
     "agent-aware",
     "ai"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }
