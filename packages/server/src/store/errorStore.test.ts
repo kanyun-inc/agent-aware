@@ -1,30 +1,34 @@
 /**
  * ErrorStore 测试
  * 基于 SPEC-SRV-003: Errors API
+ * 
+ * 更新：存储路径统一到 .agent-aware/detail/ 目录
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { rmSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { ErrorStore } from './errorStore'
 import type { ErrorRecord } from '../types'
 
-const TEST_DATA_DIR = './test-data-errors'
+const TEST_PROJECT_ROOT = './test-project-errors'
+const AGENT_AWARE_DIR = join(TEST_PROJECT_ROOT, '.agent-aware')
 
 describe('ErrorStore', () => {
   let store: ErrorStore
 
   beforeEach(() => {
     // 清理测试目录
-    if (existsSync(TEST_DATA_DIR)) {
-      rmSync(TEST_DATA_DIR, { recursive: true })
+    if (existsSync(TEST_PROJECT_ROOT)) {
+      rmSync(TEST_PROJECT_ROOT, { recursive: true })
     }
-    store = new ErrorStore(TEST_DATA_DIR)
+    store = new ErrorStore(TEST_PROJECT_ROOT)
   })
 
   afterEach(() => {
     // 清理测试目录
-    if (existsSync(TEST_DATA_DIR)) {
-      rmSync(TEST_DATA_DIR, { recursive: true })
+    if (existsSync(TEST_PROJECT_ROOT)) {
+      rmSync(TEST_PROJECT_ROOT, { recursive: true })
     }
   })
 
@@ -290,7 +294,7 @@ describe('ErrorStore', () => {
       await store.add(error)
 
       // 创建新的 store 实例，验证数据已持久化
-      const newStore = new ErrorStore(TEST_DATA_DIR)
+      const newStore = new ErrorStore(TEST_PROJECT_ROOT)
       const errors = await newStore.query()
 
       expect(errors).toHaveLength(1)

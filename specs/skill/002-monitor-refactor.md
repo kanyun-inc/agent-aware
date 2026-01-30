@@ -3,6 +3,8 @@
 > 状态: accepted  
 > 创建: 2026-01-30  
 > 更新: 2026-01-30
+>
+> **v1.1 更新**：适配统一输出目录结构（2026-01-30）
 
 ## 背景
 
@@ -13,8 +15,8 @@
 - 位置不固定（node_modules、全局安装等）
 
 **现在（本 Spec）**：
-- 监听**用户项目根目录**的 `.agent-aware/` 目录
-- 监听两个文件：`behavior.json` 和 `error.json`
+- 监听**用户项目根目录**的 `.agent-aware/alert/` 目录
+- 监听两个文件：`alert/behavior.json` 和 `alert/error.json`
 - 位置固定且可配置
 
 ## 目标
@@ -43,11 +45,11 @@ monitor.sh [DURATION] [INTERVAL] [PROJECT_ROOT]
 
 ### 监听逻辑
 
-**监听目录**：`<PROJECT_ROOT>/.agent-aware/`
+**监听目录**：`<PROJECT_ROOT>/.agent-aware/alert/`
 
 **监听文件**（按优先级）：
-1. `error.json` - 错误检测结果（Critical 优先）
-2. `behavior.json` - 行为检测结果（可能是 Critical 或 Warning）
+1. `alert/error.json` - 错误检测结果（Critical 优先）
+2. `alert/behavior.json` - 行为检测结果（可能是 Critical 或 Warning）
 
 **优先级规则**：
 - 如果同时存在两个文件，优先报告 `error.json`
@@ -58,7 +60,7 @@ monitor.sh [DURATION] [INTERVAL] [PROJECT_ROOT]
 **发现错误问题时**：
 ```bash
 🚨 发现错误问题！
-文件: /path/to/project/.agent-aware/error.json
+文件: /path/to/project/.agent-aware/alert/error.json
 {
   "timestamp": "2026-01-30T10:30:00.000Z",
   "severity": "critical",
@@ -75,7 +77,7 @@ EXIT_CODE:1
 **发现行为问题时**：
 ```bash
 ⚠️  发现行为问题！
-文件: /path/to/project/.agent-aware/behavior.json
+文件: /path/to/project/.agent-aware/alert/behavior.json
 {
   "timestamp": "2026-01-30T10:30:00.000Z",
   "severity": "critical",
@@ -125,7 +127,7 @@ EXIT_CODE:0
 
 ### 路径处理
 
-- [x] 默认监听当前目录的 .agent-aware/
+- [x] 默认监听当前目录的 .agent-aware/alert/
 - [x] 支持自定义项目根目录
 - [ ] 路径包含空格时正常工作（逻辑已实现，待测试）
 - [x] 使用绝对路径时正常工作
@@ -139,7 +141,7 @@ EXIT_CODE:0
 
 ### 边界条件
 
-- [x] .agent-aware 目录不存在时不报错
+- [x] .agent-aware/alert 目录不存在时不报错
 - [ ] 监听时间为 0 时立即退出（待测试）
 - [ ] INTERVAL > DURATION 时至少检查一次（待测试）
 
@@ -200,8 +202,8 @@ cd /path/to/project && bash monitor.sh 120 5
 
 | 方面 | 旧版本 | 新版本 |
 |-----|--------|--------|
-| 监听位置 | server 包的 .agent-aware/ | 用户项目根目录的 .agent-aware/ |
-| 文件数量 | 1 个（alert.json） | 2 个（error.json + behavior.json） |
+| 监听位置 | server 包的 .agent-aware/ | 用户项目根目录的 .agent-aware/alert/ |
+| 文件数量 | 1 个（alert.json） | 2 个（alert/error.json + alert/behavior.json） |
 | 查找逻辑 | 需要智能查找 server 包 | 固定位置，无需查找 |
 | 优先级 | 无 | error > behavior |
 
@@ -211,3 +213,4 @@ cd /path/to/project && bash monitor.sh 120 5
 |-----|---------|------|
 | 2026-01-30 | 初始版本 | 适配 SPEC-SRV-005 Detector 架构重构 |
 | 2026-01-30 | 状态更新为 accepted | 所有测试通过（7 个测试用例，8 个断言），功能验收完成 |
+| 2026-01-30 | **v1.1** 监听路径更新为 `.agent-aware/alert/` | 适配 SRV-005 v1.1 统一输出目录结构 |

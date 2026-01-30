@@ -12,7 +12,8 @@ import type { Summary } from '../types'
 
 const TEST_OUTPUT_DIR = './test-output-behavior'
 const AGENT_AWARE_DIR = join(TEST_OUTPUT_DIR, '.agent-aware')
-const BEHAVIOR_FILE = join(AGENT_AWARE_DIR, 'behavior.json')
+const ALERT_DIR = join(AGENT_AWARE_DIR, 'alert')
+const BEHAVIOR_FILE = join(ALERT_DIR, 'behavior.json')
 
 describe('BehaviorDetector', () => {
   let detector: BehaviorDetector
@@ -95,12 +96,17 @@ describe('BehaviorDetector', () => {
       const content = await readFile(BEHAVIOR_FILE, 'utf-8')
       const data = JSON.parse(content)
 
-      expect(data.severity).toBe('critical')
-      expect(data.type).toBe('frustration')
-      expect(data.summary).toContain('挫折行为')
-      expect(data.details.frustrationScore).toBe(75)
-      expect(data.details.rageClickCount).toBe(5)
-      expect(data.details.deadClickCount).toBe(2)
+      // 验证文件格式：{ version, alerts: [] }
+      expect(data.version).toBe('1.0')
+      expect(data.alerts).toHaveLength(1)
+      
+      const alert = data.alerts[0]
+      expect(alert.severity).toBe('critical')
+      expect(alert.type).toBe('frustration')
+      expect(alert.summary).toContain('挫折行为')
+      expect(alert.details.frustrationScore).toBe(75)
+      expect(alert.details.rageClickCount).toBe(5)
+      expect(alert.details.deadClickCount).toBe(2)
     })
 
     test('warning 问题写入 behavior.json', async () => {
@@ -117,8 +123,9 @@ describe('BehaviorDetector', () => {
       const content = await readFile(BEHAVIOR_FILE, 'utf-8')
       const data = JSON.parse(content)
 
-      expect(data.severity).toBe('warning')
-      expect(data.type).toBe('frustration')
+      expect(data.alerts).toHaveLength(1)
+      expect(data.alerts[0].severity).toBe('warning')
+      expect(data.alerts[0].type).toBe('frustration')
     })
 
     test('info 级别不写入文件', async () => {
@@ -148,21 +155,20 @@ describe('BehaviorDetector', () => {
       await detector.checkAndAlert(summary)
       const content1 = await readFile(BEHAVIOR_FILE, 'utf-8')
       const data1 = JSON.parse(content1)
-      const timestamp1 = data1.timestamp
+      expect(data1.alerts).toHaveLength(1)
 
       // 立即第二次写入（应该被冷却期阻止）
       await detector.checkAndAlert(summary)
       const content2 = await readFile(BEHAVIOR_FILE, 'utf-8')
       const data2 = JSON.parse(content2)
-      const timestamp2 = data2.timestamp
 
-      // 时间戳应该相同，说明没有重新写入
-      expect(timestamp2).toBe(timestamp1)
+      // 仍然只有 1 条记录，说明没有重新写入
+      expect(data2.alerts).toHaveLength(1)
     })
   })
 
   describe('文件管理', () => {
-    test('自动创建 .agent-aware 目录', async () => {
+    test('自动创建 .agent-aware/alert 目录', async () => {
       const summary: Summary = {
         totalInteractions: 100,
         frustrationScore: 75,
@@ -172,7 +178,7 @@ describe('BehaviorDetector', () => {
 
       await detector.checkAndAlert(summary)
 
-      expect(existsSync(AGENT_AWARE_DIR)).toBe(true)
+      expect(existsSync(ALERT_DIR)).toBe(true)
     })
 
     test('文件写入失败不抛出异常', async () => {
@@ -187,6 +193,51 @@ describe('BehaviorDetector', () => {
 
       // 应该不抛出异常
       await expect(invalidDetector.checkAndAlert(summary)).resolves.toBeUndefined()
+    })
+  })
+
+  describe('历史记录保留', () => {
+    test('保留历史记录：最多 100 条', async () => {
+      const summary: Summary = {
+        totalInteractions: 100,
+        frustrationScore: 75,
+        rageClickCount: 5,
+        deadClickCount: 2,
+      }
+
+      // 模拟写入 105 条记录（通过手动设置冷却期来绕过）
+      for (let i = 0; i < 105; i++) {
+        // 重置冷却期，通过创建新的 detector 实例
+        const newDetector = new BehaviorDetector(TEST_OUTPUT_DIR)
+        await newDetector.checkAndAlert(summary)
+      }
+
+      const content = await readFile(BEHAVIOR_FILE, 'utf-8')
+      const data = JSON.parse(content)
+
+      // 应该最多保留 100 条
+      expect(data.alerts.length).toBeLessThanOrEqual(100)
+    })
+
+    test('超出 100 条时删除最旧的记录（FIFO）', async () => {
+      const summary: Summary = {
+        totalInteractions: 100,
+        frustrationScore: 75,
+        rageClickCount: 5,
+        deadClickCount: 2,
+      }
+
+      // 写入 101 条记录
+      for (let i = 0; i < 101; i++) {
+        const newDetector = new BehaviorDetector(TEST_OUTPUT_DIR)
+        await newDetector.checkAndAlert(summary)
+      }
+
+      const content = await readFile(BEHAVIOR_FILE, 'utf-8')
+      const data = JSON.parse(content)
+
+      // 应该正好 100 条
+      expect(data.alerts).toHaveLength(100)
     })
   })
 })
