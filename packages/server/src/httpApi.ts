@@ -1,6 +1,6 @@
 /**
  * HTTP API
- * 基于 SPEC-SRV-001
+ * 基于 SPEC-SRV-001 和 SPEC-SRV-005
  * 
  * 支持 SDK 上报和 AI 查询
  */
@@ -9,6 +9,8 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { BehaviorStore } from './store/behaviorStore'
 import type { ErrorStore } from './store/errorStore'
+import type { BehaviorDetector } from './detector/behaviorDetector'
+import type { AlertDetector } from './detector/alertDetector'
 import type {
   BehaviorsRequest,
   BehaviorsResponse,
@@ -19,7 +21,12 @@ import type {
   ErrorType,
 } from './types'
 
-export function createHttpApi(store: BehaviorStore, errorStore?: ErrorStore): Hono {
+export function createHttpApi(
+  store: BehaviorStore,
+  errorStore?: ErrorStore,
+  behaviorDetector?: BehaviorDetector,
+  alertDetector?: AlertDetector
+): Hono {
   const app = new Hono()
 
   // 启用 CORS - 允许所有来源（开发环境）
@@ -42,6 +49,14 @@ export function createHttpApi(store: BehaviorStore, errorStore?: ErrorStore): Ho
       const behaviors = body.behaviors || []
 
       await store.addBatch(behaviors)
+
+      // 触发行为检测（不阻塞响应）
+      if (behaviorDetector) {
+        const summary = await store.getSummary()
+        behaviorDetector.checkAndAlert(summary).catch((err) => {
+          console.error('Behavior detection failed:', err)
+        })
+      }
 
       const response: BehaviorsResponse = {
         ok: true,
@@ -111,6 +126,14 @@ export function createHttpApi(store: BehaviorStore, errorStore?: ErrorStore): Ho
         const errors = body.errors || []
 
         await errorStore.addBatch(errors)
+
+        // 触发错误检测（不阻塞响应）
+        if (alertDetector) {
+          const errorSummary = await errorStore.getSummary()
+          alertDetector.checkAndAlert(errorSummary).catch((err) => {
+            console.error('Error detection failed:', err)
+          })
+        }
 
         const response: ErrorsResponse = {
           ok: true,

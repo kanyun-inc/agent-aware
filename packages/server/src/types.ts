@@ -119,3 +119,43 @@ export interface ErrorsResponse {
   ok: boolean
   count: number
 }
+
+// ============ Issue Detector ============
+
+export type IssueSeverity = 'critical' | 'warning' | 'info'
+export type IssueType = 'error' | 'frustration' | 'performance'
+
+export interface Issue {
+  id: string
+  timestamp: string
+  severity: IssueSeverity
+  type: IssueType
+  description: string
+  details: {
+    summary?: Summary
+    errorSummary?: ErrorSummary
+  }
+}
+
+export interface IssuesData {
+  issues: Issue[]
+  summary: {
+    total: number
+    critical: number
+    warning: number
+    info: number
+  }
+}
+
+export interface Alert {
+  timestamp: string
+  severity: IssueSeverity
+  type: IssueType
+  summary: string
+  details: {
+    frustrationScore?: number
+    rageClickCount?: number
+    deadClickCount?: number
+    errorCount?: number
+  }
+}
