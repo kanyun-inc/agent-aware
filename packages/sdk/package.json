@@ -1,6 +1,6 @@
 {
   "name": "@reskill/agent-aware",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Agent-aware RUM SDK - 用户行为采集库",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -16,11 +16,23 @@
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kanyun-inc/agent-aware.git",
+    "directory": "packages/sdk"
+  },
+  "author": "Kanyun Inc",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kanyun-inc/agent-aware/issues"
+  },
+  "homepage": "https://github.com/kanyun-inc/agent-aware/tree/main/packages/sdk#readme",
   "scripts": {
     "build": "rslib build",
     "dev": "rslib build --watch",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.48.0",
@@ -35,5 +47,8 @@
     "user-monitoring",
     "agent-aware",
     "ai"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }
