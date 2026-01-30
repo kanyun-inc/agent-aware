@@ -11,10 +11,13 @@ import { IssueDetector } from './detector/issueDetector'
 
 const PORT = 4100
 const DATA_DIR = './data'
+// IssueDetector 输出到 server 包的根目录（./），而不是 data 目录
+const ISSUE_OUTPUT_DIR = './'
 
 const store = new BehaviorStore(DATA_DIR)
 const errorStore = new ErrorStore(DATA_DIR)
-const issueDetector = new IssueDetector(DATA_DIR)
+// 根据 SPEC-SRV-004，issue 文件应该在 server 包根目录的 .agent-aware/ 下
+const issueDetector = new IssueDetector(ISSUE_OUTPUT_DIR)
 const app = createHttpApi(store, errorStore, issueDetector)
 
 console.log(`[AgentAware Server] Starting on port ${PORT}...`)

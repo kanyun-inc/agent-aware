@@ -23,6 +23,18 @@ Server 实时检测行为和错误数据，当发现问题时：
 
 Agent 通过轻量级文件检查即可感知问题，无需频繁调用 HTTP API。
 
+### 输出位置约定
+
+**`.agent-aware/` 目录必须创建在 server 包的根目录下**：
+- 本地开发：`packages/server/.agent-aware/`
+- 项目安装：`node_modules/@reskill/agent-aware-server/.agent-aware/`
+- 全局安装：`$(npm root -g)/@reskill/agent-aware-server/.agent-aware/`
+
+**设计原因**：
+1. 位置固定，便于 Agent 监控（可通过 npm root 命令定位）
+2. 适配全局和项目级别安装
+3. 不污染用户项目目录
+
 ## 行为契约
 
 ### 输入
@@ -172,3 +184,5 @@ Agent 通过轻量级文件检查即可感知问题，无需频繁调用 HTTP AP
 | 日期 | 变更内容 | 原因 |
 |-----|---------|------|
 | 2026-01-30 | 初始版本 | Server 主动检测问题 |
+| 2026-01-30 | 明确输出位置约定 | Spec 遗漏：未明确 `.agent-aware/` 应该在 server 包根目录 |
+| 2026-01-30 | 修复 Bug：IssueDetector 输出目录错误 | `index.ts` 和 `cli.ts` 使用了错误的 `DATA_DIR`，已改为 `./` |

@@ -159,4 +159,43 @@ describe('HTTP API + IssueDetector Integration', () => {
     expect(existsSync(alertPath)).toBe(false)
     expect(existsSync(issuesPath)).toBe(false)
   })
+
+  describe('【Bug Fix】Issue 文件输出位置', () => {
+    it('应该将 issue 文件写入到 server 包根目录（./），而不是 DATA_DIR', async () => {
+      // 正确的方式：使用 './' 作为输出目录
+      const correctDetector = new IssueDetector('./')
+      const correctApp = createHttpApi(store, errorStore, correctDetector)
+
+      const error: ErrorRecord = {
+        id: 'error-correct-path',
+        timestamp: Date.now(),
+        sessionId: 'session-correct',
+        type: 'error',
+        errorType: 'runtime',
+        error: { message: 'Test error with correct path' },
+      }
+
+      await correctApp.request('/errors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ errors: [error] }),
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      // 验证文件在 server 包根目录（当前工作目录）的 .agent-aware 下
+      const correctAlertPath = join(process.cwd(), '.agent-aware', 'alert.json')
+      const correctIssuesPath = join(process.cwd(), '.agent-aware', 'issues.json')
+
+      expect(existsSync(correctAlertPath)).toBe(true)
+      expect(existsSync(correctIssuesPath)).toBe(true)
+
+      // 验证不会写入到 TEST_DATA_DIR（模拟 DATA_DIR）
+      const wrongPath = join(TEST_DATA_DIR, '.agent-aware', 'alert.json')
+      expect(existsSync(wrongPath)).toBe(false)
+
+      // 清理
+      await correctDetector.clearIssues()
+    })
+  })
 })

@@ -12,6 +12,7 @@ test-api-data/
 
 # Data storage
 data/
+.agent-aware/
 
 # IDE
 .idea/
