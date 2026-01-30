@@ -27,7 +27,9 @@ specs/
 │   ├── 001-http-api.md
 │   ├── 002-behavior-store.md
 │   ├── 003-errors-api.md
-│   └── 004-issue-detector.md
+│   ├── 004-issue-detector.md
+│   ├── 005-detector-refactor.md
+│   └── 006-package-entry.md
 └── skill/              # Skill 工具 Spec
     └── 001-monitor-script.md
 ```
@@ -65,6 +67,7 @@ specs/
 | [SRV-003](server/003-errors-api.md) | errors-api | accepted | 错误数据 API（上报 + 查询 + 清除） |
 | [SRV-004](server/004-issue-detector.md) | issue-detector | deprecated | 问题检测器（已废弃，被 SRV-005 替代） |
 | [SRV-005](server/005-detector-refactor.md) | detector-refactor | accepted | 检测器架构重构（BehaviorDetector + AlertDetector） |
+| [SRV-006](server/006-package-entry.md) | package-entry | accepted | 包入口架构（index.ts 导出 + cli.ts 命令） |
 
 ### Skill
 

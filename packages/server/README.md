@@ -20,30 +20,34 @@ Agent-aware Server 提供 HTTP API 来收集用户交互行为和页面报错信
   - 挫折指数 50-70（Warning）
   - 愤怒点击 >= 3 次（Warning）
   - 死点击 >= 2 次（Warning）
-- 输出文件：`.agent-aware/behavior.json`
+- 输出文件：`.agent-aware/alert/behavior.json`
 
 #### AlertDetector（错误检测器）
 - 检测高危的运行时错误
 - 触发条件：
   - 错误数 >= 1（Critical）
-- 输出文件：`.agent-aware/error.json`
+- 输出文件：`.agent-aware/alert/error.json`
 
 ### 3. 数据存储
 
-**详细数据存储在包根目录的 `data/` 目录**：
-- `data/behaviors.json`：所有行为详细数据（最多 1000 条）
-- `data/errors.json`：所有错误详细数据（最多 1000 条）
+**所有数据统一存储到用户项目根目录的 `.agent-aware/` 目录**：
 
-**检测文件输出到用户项目根目录的 `.agent-aware/` 目录**：
-- `.agent-aware/behavior.json`：行为检测结果
-- `.agent-aware/error.json`：错误检测结果
+```
+.agent-aware/
+├── alert/               # 检测告警文件（供 Agent 监控）
+│   ├── behavior.json    # 行为检测告警（最多 100 条历史）
+│   └── error.json       # 错误检测告警（最多 100 条历史）
+└── detail/              # 详细数据文件（供 HTTP API 查询）
+    ├── behaviors.json   # 行为详细数据（最多 1000 条）
+    └── errors.json      # 错误详细数据（最多 1000 条）
+```
 
 ## 使用方式
 
-### 安装
+### 安装（推荐项目级别开发依赖）
 
 ```bash
-npm install @reskill/agent-aware-server
+npm install --save-dev @reskill/agent-aware-server
 ```
 
 ### 启动服务
@@ -72,11 +76,11 @@ import { BehaviorDetector } from '@reskill/agent-aware-server/detector/behaviorD
 import { AlertDetector } from '@reskill/agent-aware-server/detector/alertDetector'
 
 const PORT = 4100
-const DATA_DIR = './data'
 const PROJECT_ROOT = process.env.USER_PROJECT_ROOT || process.cwd()
 
-const store = new BehaviorStore(DATA_DIR)
-const errorStore = new ErrorStore(DATA_DIR)
+// 所有组件统一使用 PROJECT_ROOT，数据存储在 .agent-aware/ 目录下
+const store = new BehaviorStore(PROJECT_ROOT)
+const errorStore = new ErrorStore(PROJECT_ROOT)
 const behaviorDetector = new BehaviorDetector(PROJECT_ROOT)
 const alertDetector = new AlertDetector(PROJECT_ROOT)
 
@@ -124,45 +128,57 @@ console.log(`Server running on http://localhost:${PORT}`)
 
 ## 输出文件示例
 
-### behavior.json
+告警文件保留历史记录（最多 100 条），新格式如下：
+
+### alert/behavior.json
 
 ```json
 {
-  "timestamp": "2026-01-30T10:30:00.000Z",
-  "severity": "critical",
-  "type": "frustration",
-  "summary": "检测到用户挫折行为",
-  "details": {
-    "frustrationScore": 75,
-    "rageClickCount": 5,
-    "deadClickCount": 3,
-    "totalInteractions": 50
-  }
+  "version": "1.0",
+  "alerts": [
+    {
+      "timestamp": "2026-01-30T10:30:00.000Z",
+      "severity": "critical",
+      "type": "frustration",
+      "summary": "检测到用户挫折行为",
+      "details": {
+        "frustrationScore": 75,
+        "rageClickCount": 5,
+        "deadClickCount": 3,
+        "totalInteractions": 50
+      }
+    }
+  ]
 }
 ```
 
-### error.json
+### alert/error.json
 
 ```json
 {
-  "timestamp": "2026-01-30T10:30:00.000Z",
-  "severity": "critical",
-  "type": "error",
-  "summary": "检测到 3 个运行时错误",
-  "details": {
-    "totalErrors": 3,
-    "runtimeErrorCount": 2,
-    "unhandledRejectionCount": 1,
-    "consoleErrorCount": 0,
-    "recentErrors": [
-      {
-        "id": "uuid-1",
-        "timestamp": 1738233000000,
-        "errorType": "runtime",
-        "message": "Cannot read property 'foo' of undefined"
+  "version": "1.0",
+  "alerts": [
+    {
+      "timestamp": "2026-01-30T10:30:00.000Z",
+      "severity": "critical",
+      "type": "error",
+      "summary": "检测到 3 个运行时错误",
+      "details": {
+        "totalErrors": 3,
+        "runtimeErrorCount": 2,
+        "unhandledRejectionCount": 1,
+        "consoleErrorCount": 0,
+        "recentErrors": [
+          {
+            "id": "uuid-1",
+            "timestamp": 1738233000000,
+            "errorType": "runtime",
+            "message": "Cannot read property 'foo' of undefined"
+          }
+        ]
       }
-    ]
-  }
+    }
+  ]
 }
 ```
 

@@ -2,7 +2,7 @@
 
 > 状态: accepted  
 > 创建: 2026-01-25  
-> 更新: 2026-01-25
+> 更新: 2026-01-30
 
 ## 背景
 
@@ -47,7 +47,7 @@ interface Hotspot {
 
 ### 存储格式
 
-文件路径：`data/behaviors.json`
+文件路径：`.agent-aware/detail/behaviors.json`（统一输出到用户项目根目录的 `.agent-aware/` 目录下）
 
 ```json
 {
@@ -82,7 +82,7 @@ frustrationScore = min(100, (rageClickCount + deadClickCount) / totalClicks * 10
 ### 约束
 
 - 文件 I/O 异步
-- 数据目录：`data/`（相对于 Server 运行目录）
+- 数据目录：`.agent-aware/detail/`（相对于用户项目根目录，参见 [SRV-005](005-detector-refactor.md) 输出位置约定）
 
 ## 测试要点
 
@@ -101,3 +101,4 @@ frustrationScore = min(100, (rageClickCount + deadClickCount) / totalClicks * 10
 | 日期 | 变更内容 | 原因 |
 |-----|---------|------|
 | 2026-01-25 | 初始版本 | 新功能 |
+| 2026-01-30 | 存储路径变更为 `.agent-aware/detail/` | 统一输出目录结构（参见 SRV-005 v1.1） |

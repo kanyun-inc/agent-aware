@@ -6,6 +6,10 @@
  * 
  * 使用方式：
  * npx agent-aware-server start [--project-root <path>]
+ * 
+ * 所有输出文件统一到 <project-root>/.agent-aware/ 目录：
+ * - .agent-aware/alert/ - 检测告警文件
+ * - .agent-aware/detail/ - 详细数据文件
  */
 
 import { serve } from '@hono/node-server'
@@ -16,7 +20,6 @@ import { BehaviorDetector } from './detector/behaviorDetector.js'
 import { AlertDetector } from './detector/alertDetector.js'
 
 const HTTP_PORT = 4100
-const DATA_DIR = './data'
 
 function parseArgs() {
   const args = process.argv.slice(2)
@@ -34,8 +37,9 @@ function parseArgs() {
 function start() {
   const { projectRoot } = parseArgs()
 
-  const store = new BehaviorStore(DATA_DIR)
-  const errorStore = new ErrorStore(DATA_DIR)
+  // 所有组件统一使用 projectRoot，输出到 .agent-aware/ 目录
+  const store = new BehaviorStore(projectRoot)
+  const errorStore = new ErrorStore(projectRoot)
   const behaviorDetector = new BehaviorDetector(projectRoot)
   const alertDetector = new AlertDetector(projectRoot)
   const app = createHttpApi(store, errorStore, behaviorDetector, alertDetector)
@@ -47,7 +51,10 @@ function start() {
 ║                                                           ║
 ║   HTTP API: http://localhost:${HTTP_PORT}                      ║
 ║   Project Root: ${projectRoot.slice(0, 38).padEnd(38)}║
-║   Output: ${(projectRoot + '/.agent-aware/').slice(0, 47).padEnd(47)}║
+║                                                           ║
+║   Output:                                                 ║
+║     Alert:  .agent-aware/alert/                           ║
+║     Detail: .agent-aware/detail/                          ║
 ║                                                           ║
 ║   Endpoints:                                              ║
 ║     POST   /behaviors       - SDK 上报行为数据            ║
@@ -86,6 +93,15 @@ Agent-aware CLI
 
 环境变量:
   USER_PROJECT_ROOT        用户项目根目录（优先级高于 --project-root）
+
+输出目录结构:
+  <project-root>/.agent-aware/
+  ├── alert/               # 检测告警文件（供 Agent 监控）
+  │   ├── behavior.json    # 行为检测告警
+  │   └── error.json       # 错误检测告警
+  └── detail/              # 详细数据文件（供 HTTP API 查询）
+      ├── behaviors.json   # 行为详细数据
+      └── errors.json      # 错误详细数据
 
 示例:
   npx agent-aware-server start

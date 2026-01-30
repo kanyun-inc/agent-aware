@@ -1,6 +1,8 @@
 /**
  * BehaviorStore - 行为数据存储
  * 基于 SPEC-SRV-002
+ * 
+ * 更新：存储路径统一到 .agent-aware/detail/ 目录
  */
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
@@ -13,17 +15,31 @@ import type {
   Hotspot,
 } from '../types'
 
+const AGENT_AWARE_DIR = '.agent-aware'
+const DETAIL_DIR = 'detail'
 const DATA_FILE = 'behaviors.json'
 const MAX_BEHAVIORS = 1000
 const STORAGE_VERSION = '1.0'
 
+/**
+ * 获取默认的项目根目录
+ * 优先级：环境变量 USER_PROJECT_ROOT > process.cwd()
+ */
+function getDefaultProjectRoot(): string {
+  return process.env.USER_PROJECT_ROOT || process.cwd()
+}
+
 export class BehaviorStore {
-  private dataDir: string
+  private detailDir: string
   private filePath: string
 
-  constructor(dataDir: string = './data') {
-    this.dataDir = dataDir
-    this.filePath = join(dataDir, DATA_FILE)
+  /**
+   * @param projectRoot 用户项目根目录，数据将存储在 <projectRoot>/.agent-aware/detail/
+   *                    默认从环境变量 USER_PROJECT_ROOT 读取，如果未设置则使用 process.cwd()
+   */
+  constructor(projectRoot: string = getDefaultProjectRoot()) {
+    this.detailDir = join(projectRoot, AGENT_AWARE_DIR, DETAIL_DIR)
+    this.filePath = join(this.detailDir, DATA_FILE)
   }
 
   /**
@@ -154,7 +170,7 @@ export class BehaviorStore {
    */
   private async write(data: StorageData): Promise<void> {
     // 确保目录存在
-    await mkdir(this.dataDir, { recursive: true })
+    await mkdir(this.detailDir, { recursive: true })
     await writeFile(this.filePath, JSON.stringify(data, null, 2), 'utf-8')
   }
 }

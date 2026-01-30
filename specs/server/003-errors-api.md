@@ -2,7 +2,7 @@
 
 > 状态: accepted  
 > 创建: 2026-01-29  
-> 更新: 2026-01-29
+> 更新: 2026-01-30
 
 ## 背景
 
@@ -19,7 +19,7 @@ SDK 通过 Error Tracker（SPEC-SDK-008）捕获运行时错误、Promise 异常
 
 ### 数据结构
 
-错误数据存储在 `data/errors.json`，格式与 `behaviors.json` 保持一致：
+错误数据存储在 `.agent-aware/detail/errors.json`（统一输出到用户项目根目录，参见 [SRV-005](005-detector-refactor.md)），格式与 `behaviors.json` 保持一致：
 
 ```typescript
 interface ErrorStorageData {
@@ -111,7 +111,7 @@ ErrorRecord[]
 
 ### 约束
 
-- 存储路径：`data/errors.json`
+- 存储路径：`.agent-aware/detail/errors.json`（参见 [SRV-005](005-detector-refactor.md) 输出位置约定）
 - 存储版本：`1.0`
 - 最大存储数量：1000 条
 - CORS：继承现有配置（允许所有来源）
@@ -136,3 +136,4 @@ ErrorRecord[]
 |-----|---------|------|
 | 2026-01-29 | 初始版本 | 新功能需求 |
 | 2026-01-29 | 状态更新为 accepted | 所有测试通过（ErrorStore: 13 tests, HTTP API: 10 tests），功能验收完成 |
+| 2026-01-30 | 存储路径变更为 `.agent-aware/detail/` | 统一输出目录结构（参见 SRV-005 v1.1） |

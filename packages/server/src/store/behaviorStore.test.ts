@@ -1,6 +1,8 @@
 /**
  * BehaviorStore 测试
  * 基于 SPEC-SRV-002: Behavior Store
+ * 
+ * 更新：存储路径统一到 .agent-aware/detail/ 目录
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
@@ -9,7 +11,9 @@ import { rm, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Behavior } from '../types'
 
-const TEST_DATA_DIR = join(process.cwd(), 'test-data')
+const TEST_PROJECT_ROOT = join(process.cwd(), 'test-project-behavior')
+const AGENT_AWARE_DIR = join(TEST_PROJECT_ROOT, '.agent-aware')
+const DETAIL_DIR = join(AGENT_AWARE_DIR, 'detail')
 
 function createTestBehavior(overrides: Partial<Behavior> = {}): Behavior {
   return {
@@ -31,12 +35,12 @@ describe('BehaviorStore', () => {
   let store: BehaviorStore
 
   beforeEach(async () => {
-    await mkdir(TEST_DATA_DIR, { recursive: true })
-    store = new BehaviorStore(TEST_DATA_DIR)
+    await mkdir(DETAIL_DIR, { recursive: true })
+    store = new BehaviorStore(TEST_PROJECT_ROOT)
   })
 
   afterEach(async () => {
-    await rm(TEST_DATA_DIR, { recursive: true, force: true })
+    await rm(TEST_PROJECT_ROOT, { recursive: true, force: true })
   })
 
   describe('add / addBatch', () => {
