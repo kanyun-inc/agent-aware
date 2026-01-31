@@ -1,0 +1,175 @@
+---
+description: 【强制】Changeset 双语工作流 - 所有代码变更必须生成双语 changeset
+alwaysApply: true
+---
+
+# Changeset 双语工作流【强制规则】
+
+**⚠️ 本规则为强制规则，所有涉及发布包的代码变更都必须生成双语 changeset。**
+
+## 适用范围
+
+以下包的代码变更必须生成 changeset：
+- `@reskill/agent-aware` (`packages/sdk/`)
+- `@reskill/agent-aware-server` (`packages/server/`)
+
+## 例外情况
+
+以下改动**不需要**生成 changeset：
+- 文档更新（README、注释等）
+- 开发工具配置（.cursor/、.github/ 等）
+- 示例代码 (examples/)
+- 规格文件 (specs/)
+- 测试文件的纯重构（不涉及功能变更）
+
+## Changeset 格式规范【必须遵守】
+
+每个 changeset 必须包含**英文和中文**两个版本的描述，格式如下：
+
+```markdown
+---
+"@reskill/agent-aware": patch
+---
+
+English summary sentence
+
+- English detail point 1
+- English detail point 2
+
+---
+
+中文摘要
+
+- 中文详细说明 1
+- 中文详细说明 2
+```
+
+## 版本类型选择
+
+- **major**: 破坏性变更（Breaking Changes）
+- **minor**: 新功能、新特性
+- **patch**: Bug 修复、小改进、性能优化
+
+## 工作流程【必须按顺序执行】
+
+```
+1. 【必须】完成代码变更和测试
+   ↓
+2. 【必须】在 commit 前创建 changeset 文件
+   ↓
+3. 【必须】使用 pnpm changeset 或手动创建 .changeset/<random-name>.md
+   ↓
+4. 【必须】changeset 内容包含英文 + 中文双语描述
+   ↓
+5. 【必须】将 changeset 文件与代码变更一起 commit
+```
+
+## Changeset 文件位置
+
+```
+.changeset/
+├── config.json          # changeset 配置
+├── README.md            # changeset 说明
+└── <random-name>.md     # 各个待发布的 changeset
+```
+
+## 文件命名
+
+Changeset 文件名应使用随机生成的形容词+名词组合，例如：
+- `brave-lions-dance.md`
+- `happy-dogs-run.md`
+- `cool-cats-sleep.md`
+
+可以使用 `pnpm changeset` 命令自动生成文件名。
+
+## 示例
+
+### 示例 1: Bug 修复 (patch)
+
+```markdown
+---
+"@reskill/agent-aware": patch
+---
+
+Fix click event not captured on dynamically created elements
+
+- Fixed event delegation to properly capture clicks on dynamic DOM elements
+- Added mutation observer to track new elements
+
+---
+
+修复动态创建元素上的点击事件未被捕获的问题
+
+- 修复了事件委托以正确捕获动态 DOM 元素上的点击
+- 添加了 mutation observer 来追踪新元素
+```
+
+### 示例 2: 新功能 (minor)
+
+```markdown
+---
+"@reskill/agent-aware": minor
+"@reskill/agent-aware-server": minor
+---
+
+Add keyboard shortcut tracking support
+
+- New `keyboardTracker` module for tracking keyboard shortcuts
+- Support for custom key combination patterns
+- Integration with existing behavior reporting system
+
+---
+
+添加键盘快捷键追踪支持
+
+- 新增 `keyboardTracker` 模块用于追踪键盘快捷键
+- 支持自定义按键组合模式
+- 与现有行为上报系统集成
+```
+
+### 示例 3: 破坏性变更 (major)
+
+```markdown
+---
+"@reskill/agent-aware-server": major
+---
+
+**Breaking Change**: Restructure output directory
+
+- All output files now unified under `.agent-aware/` directory
+- Alert files moved to `.agent-aware/alert/`
+- Detail files moved to `.agent-aware/detail/`
+
+**Migration Guide:**
+1. Update file paths in your monitoring scripts
+2. Alert file format changed from single object to array format
+
+---
+
+**破坏性变更**：重构输出目录结构
+
+- 所有输出文件现在统一到 `.agent-aware/` 目录下
+- 告警文件移至 `.agent-aware/alert/`
+- 详细数据文件移至 `.agent-aware/detail/`
+
+**迁移指南：**
+1. 更新监控脚本中的文件路径
+2. 告警文件格式从单个对象变为数组格式
+```
+
+## 禁止事项【违反即停止】
+
+- 🚫 **禁止**发布包代码变更后不创建 changeset
+- 🚫 **禁止**只写英文或只写中文（必须双语）
+- 🚫 **禁止**描述过于简单（如仅写 "fix bug"）
+- 🚫 **禁止**changeset 与代码变更分开 commit
+
+## 检查清单
+
+在 commit 前确认：
+- [ ] 代码变更是否涉及发布包？
+- [ ] 是否已创建 changeset 文件？
+- [ ] changeset 是否包含英文描述？
+- [ ] changeset 是否包含中文描述？
+- [ ] 版本类型是否正确（patch/minor/major）？
+- [ ] changeset 文件是否在同一个 commit 中？
