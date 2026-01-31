@@ -1,71 +1,73 @@
 # @reskill/agent-aware-server
 
-Agent-aware Server 提供 HTTP API 来收集用户交互行为和页面报错信息，并通过智能检测器主动发现问题。
+Agent-aware Server provides HTTP APIs to collect user interaction behaviors and page errors, with intelligent detectors for proactive issue discovery.
 
-## 功能特性
+[简体中文](./README.zh-CN.md)
 
-### 1. 数据收集
+## Features
 
-- **行为数据收集**：从 `http://localhost:4100` 接收 SDK 上报的用户交互数据
-- **错误数据收集**：收集运行时错误、Promise 异常和 Console 错误
+### 1. Data Collection
 
-### 2. 智能检测器
+- **Behavior Data Collection**: Receives user interaction data from SDK at `http://localhost:4100`
+- **Error Data Collection**: Collects runtime errors, Promise rejections, and console errors
 
-重构后的架构包含两个独立的检测器：
+### 2. Intelligent Detectors
 
-#### BehaviorDetector（行为检测器）
-- 检测消极的用户交互行为
-- 触发条件：
-  - 挫折指数 >= 70（Critical）
-  - 挫折指数 50-70（Warning）
-  - 愤怒点击 >= 3 次（Warning）
-  - 死点击 >= 2 次（Warning）
-- 输出文件：`.agent-aware/alert/behavior.json`
+The refactored architecture includes two independent detectors:
 
-#### AlertDetector（错误检测器）
-- 检测高危的运行时错误
-- 触发条件：
-  - 错误数 >= 1（Critical）
-- 输出文件：`.agent-aware/alert/error.json`
+#### BehaviorDetector
+- Detects negative user interaction behaviors
+- Trigger conditions:
+  - Frustration score >= 70 (Critical)
+  - Frustration score 50-70 (Warning)
+  - Rage clicks >= 3 (Warning)
+  - Dead clicks >= 2 (Warning)
+- Output file: `.agent-aware/alert/behavior.json`
 
-### 3. 数据存储
+#### AlertDetector (Error Detector)
+- Detects high-risk runtime errors
+- Trigger conditions:
+  - Error count >= 1 (Critical)
+- Output file: `.agent-aware/alert/error.json`
 
-**所有数据统一存储到用户项目根目录的 `.agent-aware/` 目录**：
+### 3. Data Storage
+
+**All data is stored in the `.agent-aware/` directory under the user's project root**:
 
 ```
 .agent-aware/
-├── alert/               # 检测告警文件（供 Agent 监控）
-│   ├── behavior.json    # 行为检测告警（最多 100 条历史）
-│   └── error.json       # 错误检测告警（最多 100 条历史）
-└── detail/              # 详细数据文件（供 HTTP API 查询）
-    ├── behaviors.json   # 行为详细数据（最多 1000 条）
-    └── errors.json      # 错误详细数据（最多 1000 条）
+├── alert/               # Alert files (for Agent monitoring)
+│   ├── behavior.json    # Behavior detection alerts (max 100 history)
+│   └── error.json       # Error detection alerts (max 100 history)
+└── detail/              # Detail data files (for HTTP API queries)
+    ├── behaviors.json   # Behavior detail data (max 1000 entries)
+    └── errors.json      # Error detail data (max 1000 entries)
 ```
 
-## 使用方式
+## Usage
 
-### 安装（推荐项目级别开发依赖）
+### Installation (Recommended as project dev dependency)
 
 ```bash
 npm install --save-dev @reskill/agent-aware-server
 ```
 
-### 启动服务
+### Starting the Server
 
-#### 方式 1：使用 CLI（推荐）
+#### Method 1: Using CLI (Recommended)
 
 ```bash
-# 默认启动（输出到当前目录）
+# Default start (output to current directory)
 npx agent-aware-server start
 
-# 指定项目根目录
+# Specify project root directory
 npx agent-aware-server start --project-root /path/to/project
 
-# 使用环境变量（优先级最高）
+# Use environment variable (highest priority)
 USER_PROJECT_ROOT=/path/to/project npx agent-aware-server start
 ```
 
-#### 方式 2：编程方式
+#### Method 2: Programmatic
 
 ```typescript
 import { serve } from '@hono/node-server'
@@ -78,7 +80,7 @@ import { AlertDetector } from '@reskill/agent-aware-server/detector/alertDetecto
 const PORT = 4100
 const PROJECT_ROOT = process.env.USER_PROJECT_ROOT || process.cwd()
 
-// 所有组件统一使用 PROJECT_ROOT，数据存储在 .agent-aware/ 目录下
+// All components use PROJECT_ROOT, data stored in .agent-aware/ directory
 const store = new BehaviorStore(PROJECT_ROOT)
 const errorStore = new ErrorStore(PROJECT_ROOT)
 const behaviorDetector = new BehaviorDetector(PROJECT_ROOT)
@@ -96,39 +98,39 @@ console.log(`Server running on http://localhost:${PORT}`)
 
 ## HTTP API
 
-### 行为相关
+### Behavior Related
 
-- **POST /behaviors** - 接收行为数据（SDK 上报）
-- **GET /behaviors** - 查询行为数据
-  - 参数：`types`（可选）、`limit`（可选）
-- **GET /summary** - 获取行为摘要
-- **GET /hotspots** - 获取交互热点
-  - 参数：`limit`（可选）
-- **DELETE /behaviors** - 清空行为数据
+- **POST /behaviors** - Receive behavior data (SDK reports)
+- **GET /behaviors** - Query behavior data
+  - Parameters: `types` (optional), `limit` (optional)
+- **GET /summary** - Get behavior summary
+- **GET /hotspots** - Get interaction hotspots
+  - Parameters: `limit` (optional)
+- **DELETE /behaviors** - Clear behavior data
 
-### 错误相关
+### Error Related
 
-- **POST /errors** - 接收错误数据（SDK 上报）
-- **GET /errors** - 查询错误数据
-  - 参数：`errorTypes`（可选）、`limit`（可选）
-- **GET /errors/summary** - 获取错误摘要
-- **DELETE /errors** - 清空错误数据
+- **POST /errors** - Receive error data (SDK reports)
+- **GET /errors** - Query error data
+  - Parameters: `errorTypes` (optional), `limit` (optional)
+- **GET /errors/summary** - Get error summary
+- **DELETE /errors** - Clear error data
 
-### 健康检查
+### Health Check
 
-- **GET /health** - 健康检查
+- **GET /health** - Health check
 
-## 项目根目录配置
+## Project Root Configuration
 
-检测器输出文件的位置由以下优先级决定：
+The output file location is determined by the following priority:
 
-1. **环境变量** `USER_PROJECT_ROOT`（优先级最高）
-2. **启动参数** `--project-root`
-3. **默认值** `process.cwd()`（当前工作目录）
+1. **Environment variable** `USER_PROJECT_ROOT` (highest priority)
+2. **Startup parameter** `--project-root`
+3. **Default** `process.cwd()` (current working directory)
 
-## 输出文件示例
+## Output File Examples
 
-告警文件保留历史记录（最多 100 条），新格式如下：
+Alert files retain history (max 100 entries) in the following format:
 
 ### alert/behavior.json
 
@@ -140,7 +142,7 @@ console.log(`Server running on http://localhost:${PORT}`)
       "timestamp": "2026-01-30T10:30:00.000Z",
       "severity": "critical",
       "type": "frustration",
-      "summary": "检测到用户挫折行为",
+      "summary": "检测到用户挫折行为（挫折指数: 75）",
       "details": {
         "frustrationScore": 75,
         "rageClickCount": 5,
@@ -182,32 +184,32 @@ console.log(`Server running on http://localhost:${PORT}`)
 }
 ```
 
-## 冷却期机制
+## Cooldown Mechanism
 
-为避免告警风暴，每个检测器都有 10 秒的冷却期：
-- 同一检测器的文件写入间隔至少 10 秒
-- 冷却期内的新问题会累积到下次写入
+To prevent alert storms, each detector has a 10-second cooldown period:
+- Minimum 10 seconds between file writes for the same detector
+- New issues during cooldown are accumulated for the next write
 
-## 架构说明
+## Architecture
 
-基于 [SPEC-SRV-005: Detector 架构重构](../../specs/server/005-detector-refactor.md)
+Based on [SPEC-SRV-005: Detector Architecture Refactor](../../specs/server/005-detector-refactor.md)
 
-### 设计原则
+### Design Principles
 
-1. **职责分离**：BehaviorDetector 和 AlertDetector 各司其职
-2. **异步检测**：检测逻辑不阻塞 API 响应
-3. **容错设计**：文件写入失败不影响数据接收
-4. **独立工作**：每个检测器独立工作，互不干扰
+1. **Separation of Concerns**: BehaviorDetector and AlertDetector have distinct responsibilities
+2. **Asynchronous Detection**: Detection logic doesn't block API responses
+3. **Fault Tolerant**: File write failures don't affect data reception
+4. **Independent Operation**: Each detector works independently without interference
 
-## 开发
+## Development
 
-### 运行测试
+### Run Tests
 
 ```bash
 npm test
 ```
 
-### 构建
+### Build
 
 ```bash
 npm run build

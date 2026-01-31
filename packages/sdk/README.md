@@ -1,32 +1,34 @@
 # @reskill/agent-aware
 
-让 AI 感知用户行为的 Web SDK。
+Web SDK that enables AI to perceive user behavior.
 
-## 安装
+[简体中文](./README.zh-CN.md)
+
+## Installation
 
 ```bash
 npm install @reskill/agent-aware
-# 或
+# or
 pnpm add @reskill/agent-aware
 ```
 
-## 使用
+## Usage
 
-### ES Module (推荐)
+### ES Module (Recommended)
 
 ```typescript
 import { initAgentAware } from '@reskill/agent-aware'
 
-// 初始化（放在应用入口）
+// Initialize (place at app entry point)
 initAgentAware()
 
-// 或自定义配置
+// Or with custom configuration
 const { stop } = initAgentAware({
   endpoint: 'http://localhost:4100/behaviors',
   debug: true,
 })
 
-// 停止追踪
+// Stop tracking
 stop()
 ```
 
@@ -40,7 +42,7 @@ const { stop } = initAgentAware({
 })
 ```
 
-### 浏览器 Script 标签 (UMD)
+### Browser Script Tag (UMD)
 
 ```html
 <script src="https://unpkg.com/@reskill/agent-aware/dist/index.umd.js"></script>
@@ -49,47 +51,47 @@ const { stop } = initAgentAware({
 </script>
 ```
 
-## 模块格式支持
+## Module Format Support
 
-本包支持多种模块格式，适配不同的构建工具和运行环境：
+This package supports multiple module formats for different build tools and runtime environments:
 
-| 格式 | 文件 | 用途 |
-|------|------|------|
-| **ESM** | `dist/index.js` | 现代前端项目（Vite、Next.js、Webpack 5+）支持 tree-shaking |
-| **CommonJS** | `dist/index.cjs` | Node.js 项目、老旧构建工具 |
-| **UMD** | `dist/index.umd.js` | 浏览器 `<script>` 标签直接引入 |
+| Format | File | Usage |
+|--------|------|-------|
+| **ESM** | `dist/index.js` | Modern frontend projects (Vite, Next.js, Webpack 5+) with tree-shaking support |
+| **CommonJS** | `dist/index.cjs` | Node.js projects, legacy build tools |
+| **UMD** | `dist/index.umd.js` | Direct browser `<script>` tag inclusion |
 
-构建工具会根据 `package.json` 的 `exports` 字段自动选择合适的格式。
+Build tools will automatically select the appropriate format based on the `exports` field in `package.json`.
 
-## 追踪的行为
+## Tracked Behaviors
 
-| 类型 | 描述 |
-|------|------|
-| `click` | 普通点击 |
-| `rage_click` | 愤怒点击（1秒内连续点击3次） |
-| `dead_click` | 无效点击（点击后无响应） |
-| `scroll` | 滚动（方向、深度、速度） |
-| `hover` | 悬停（停留超过500ms） |
-| `edit` | 编辑输入 |
+| Type | Description |
+|------|-------------|
+| `click` | Normal click |
+| `rage_click` | Rage click (3+ clicks within 1 second) |
+| `dead_click` | Dead click (click with no response) |
+| `scroll` | Scroll (direction, depth, speed) |
+| `hover` | Hover (stay over 500ms) |
+| `edit` | Text input editing |
 
-## 配置选项
+## Configuration Options
 
 ```typescript
 interface AgentAwareConfig {
-  endpoint?: string  // Server 地址，默认 http://localhost:4100/behaviors
-  debug?: boolean    // 调试模式，默认 false
+  endpoint?: string  // Server address, default: http://localhost:4100/behaviors
+  debug?: boolean    // Debug mode, default: false
 }
 ```
 
-## 配合 Server 使用
+## Using with Server
 
-需要先启动 Agent-aware Server：
+Start the Agent-aware Server first:
 
 ```bash
 npx agent-aware-server start
 ```
 
-Server 运行在 `http://localhost:4100`。
+Server runs at `http://localhost:4100`.
 
 ## License
 
