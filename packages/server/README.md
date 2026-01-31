@@ -142,7 +142,7 @@ Alert files retain history (max 100 entries) in the following format:
       "timestamp": "2026-01-30T10:30:00.000Z",
       "severity": "critical",
       "type": "frustration",
-      "summary": "User frustration behavior detected",
+      "summary": "检测到用户挫折行为（挫折指数: 75）",
       "details": {
         "frustrationScore": 75,
         "rageClickCount": 5,
@@ -164,7 +164,7 @@ Alert files retain history (max 100 entries) in the following format:
       "timestamp": "2026-01-30T10:30:00.000Z",
       "severity": "critical",
       "type": "error",
-      "summary": "Detected 3 runtime errors",
+      "summary": "检测到 3 个运行时错误",
       "details": {
         "totalErrors": 3,
         "runtimeErrorCount": 2,
