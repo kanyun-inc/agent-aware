@@ -3,28 +3,28 @@ description: "[Required] Bilingual Changeset Workflow - All code changes must ge
 alwaysApply: true
 ---
 
-# Changeset 双语工作流【强制规则】
+# Bilingual Changeset Workflow [Required]
 
-**⚠️ 本规则为强制规则，所有涉及发布包的代码变更都必须生成双语 changeset。**
+**⚠️ This is a mandatory rule. All code changes to published packages must generate a bilingual changeset.**
 
-## 适用范围
+## Scope
 
-以下包的代码变更必须生成 changeset：
+The following packages require changeset for code changes:
 - `@reskill/agent-aware` (`packages/sdk/`)
 - `@reskill/agent-aware-server` (`packages/server/`)
 
-## 例外情况
+## Exceptions
 
-以下改动**不需要**生成 changeset：
-- 文档更新（README、注释等）
-- 开发工具配置（.cursor/、.github/ 等）
-- 示例代码 (examples/)
-- 规格文件 (specs/)
-- 测试文件的纯重构（不涉及功能变更）
+The following changes do **not** require a changeset:
+- Documentation updates (README, comments, etc.)
+- Development tool configurations (.cursor/, .github/, etc.)
+- Example code (examples/)
+- Specification files (specs/)
+- Pure test refactoring (no functional changes)
 
-## Changeset 格式规范【必须遵守】
+## Changeset Format [Must Follow]
 
-每个 changeset 必须包含**英文和中文**两个版本的描述，格式如下：
+Each changeset must contain **both English and Chinese** descriptions in the following format:
 
 ```markdown
 ---
@@ -44,47 +44,47 @@ English summary sentence
 - 中文详细说明 2
 ```
 
-## 版本类型选择
+## Version Type Selection
 
-- **major**: 破坏性变更（Breaking Changes）
-- **minor**: 新功能、新特性
-- **patch**: Bug 修复、小改进、性能优化
+- **major**: Breaking Changes
+- **minor**: New features, new capabilities
+- **patch**: Bug fixes, minor improvements, performance optimizations
 
-## 工作流程【必须按顺序执行】
+## Workflow [Must Execute in Order]
 
 ```
-1. 【必须】完成代码变更和测试
+1. [Required] Complete code changes and tests
    ↓
-2. 【必须】在 commit 前创建 changeset 文件
+2. [Required] Create changeset file before commit
    ↓
-3. 【必须】使用 pnpm changeset 或手动创建 .changeset/<random-name>.md
+3. [Required] Use pnpm changeset or manually create .changeset/<random-name>.md
    ↓
-4. 【必须】changeset 内容包含英文 + 中文双语描述
+4. [Required] Changeset content must include English + Chinese bilingual descriptions
    ↓
-5. 【必须】将 changeset 文件与代码变更一起 commit
+5. [Required] Commit changeset file together with code changes
 ```
 
-## Changeset 文件位置
+## Changeset File Location
 
 ```
 .changeset/
-├── config.json          # changeset 配置
-├── README.md            # changeset 说明
-└── <random-name>.md     # 各个待发布的 changeset
+├── config.json          # changeset configuration
+├── README.md            # changeset documentation
+└── <random-name>.md     # individual pending changesets
 ```
 
-## 文件命名
+## File Naming
 
-Changeset 文件名应使用随机生成的形容词+名词组合，例如：
+Changeset filenames should use randomly generated adjective+noun combinations, for example:
 - `brave-lions-dance.md`
 - `happy-dogs-run.md`
 - `cool-cats-sleep.md`
 
-可以使用 `pnpm changeset` 命令自动生成文件名。
+You can use the `pnpm changeset` command to auto-generate filenames.
 
-## 示例
+## Examples
 
-### 示例 1: Bug 修复 (patch)
+### Example 1: Bug Fix (patch)
 
 ```markdown
 ---
@@ -104,7 +104,7 @@ Fix click event not captured on dynamically created elements
 - 添加了 mutation observer 来追踪新元素
 ```
 
-### 示例 2: 新功能 (minor)
+### Example 2: New Feature (minor)
 
 ```markdown
 ---
@@ -127,7 +127,7 @@ Add keyboard shortcut tracking support
 - 与现有行为上报系统集成
 ```
 
-### 示例 3: 破坏性变更 (major)
+### Example 3: Breaking Change (major)
 
 ```markdown
 ---
@@ -157,19 +157,19 @@ Add keyboard shortcut tracking support
 2. 告警文件格式从单个对象变为数组格式
 ```
 
-## 禁止事项【违反即停止】
+## Prohibited Actions [Stop if Violated]
 
-- 🚫 **禁止**发布包代码变更后不创建 changeset
-- 🚫 **禁止**只写英文或只写中文（必须双语）
-- 🚫 **禁止**描述过于简单（如仅写 "fix bug"）
-- 🚫 **禁止**changeset 与代码变更分开 commit
+- 🚫 **Do not** skip creating changeset after package code changes
+- 🚫 **Do not** write only English or only Chinese (must be bilingual)
+- 🚫 **Do not** write overly simple descriptions (e.g., just "fix bug")
+- 🚫 **Do not** commit changeset separately from code changes
 
-## 检查清单
+## Checklist
 
-在 commit 前确认：
-- [ ] 代码变更是否涉及发布包？
-- [ ] 是否已创建 changeset 文件？
-- [ ] changeset 是否包含英文描述？
-- [ ] changeset 是否包含中文描述？
-- [ ] 版本类型是否正确（patch/minor/major）？
-- [ ] changeset 文件是否在同一个 commit 中？
+Confirm before commit:
+- [ ] Does the code change involve published packages?
+- [ ] Has a changeset file been created?
+- [ ] Does the changeset contain English description?
+- [ ] Does the changeset contain Chinese description?
+- [ ] Is the version type correct (patch/minor/major)?
+- [ ] Is the changeset file in the same commit?
