@@ -1,5 +1,5 @@
 ---
-description: 【强制】Changeset 双语工作流 - 所有代码变更必须生成双语 changeset
+description: "[Required] Bilingual Changeset Workflow - All code changes must generate bilingual changeset"
 alwaysApply: true
 ---
 
