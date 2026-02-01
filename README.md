@@ -52,11 +52,12 @@ Just talk to your AI and let it build web apps. It now has eyes.
 | **Scroll** | How deep users browse |
 | **Hover** | Where users hesitate |
 | **Edit** | User modifications to AI-generated content |
+| **Error** | Runtime errors and unhandled exceptions |
 
 ## Development
 
 ```bash
-git clone https://github.com/anthropics/agent-aware.git
+git clone https://github.com/kanyun-inc/agent-aware.git
 cd agent-aware
 pnpm install
 pnpm dev:server  # Start server

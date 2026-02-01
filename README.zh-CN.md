@@ -51,11 +51,12 @@ npx reskill@latest install agent-aware
 | **Scroll** | 用户浏览了多深 |
 | **Hover** | 用户在哪里犹豫 |
 | **Edit** | 用户修改了 AI 生成的内容 |
+| **Error** | 运行时错误和未处理异常 |
 
 ## 开发
 
 ```bash
-git clone https://github.com/anthropics/agent-aware.git
+git clone https://github.com/kanyun-inc/agent-aware.git
 cd agent-aware
 pnpm install
 pnpm dev:server  # 启动 Server
