@@ -1,12 +1,12 @@
 # Agent-aware
 
-**让 AI Agent 感知用户行为**
+**感知用户行为的 Skill**
 
 [English](./README.md)
 
 ---
 
-Agent-aware 让你的 AI Agent（Cursor、Claude Code 等）能够"看到"用户在 Web 应用中的操作——点击、滚动、卡顿、修改等。
+Agent-aware 是一个 **Skill**，让你的 AI Agent（Cursor、Claude Code 等）能够"看到"用户在 Web 应用中的操作——点击、滚动、卡顿、修改等。
 
 ## 安装
 
@@ -66,9 +66,8 @@ pnpm test        # 运行测试
 
 ```
 agent-aware/
-├── skill/           # AI Agent 使用指南
-│   ├── SKILL.md     # 完整使用指南（基础 + 高级）
-│   ├── README.md    # Skill 说明文档
+├── skill/           # Skill 定义（供 AI Agent 使用）
+│   ├── SKILL.md     # 完整使用指南（AI Agent 阅读）
 │   └── scripts/     # 监控脚本
 ├── packages/
 │   ├── sdk/         # 浏览器 SDK（行为追踪）
