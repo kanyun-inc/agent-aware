@@ -8,10 +8,6 @@
 
 Agent-aware is a **skill** that gives your AI Agent (Cursor, Claude Code, etc.) the ability to **see** what users do in web apps—clicks, scrolls, frustration, edits, and more.
 
-## What is a Skill?
-
-A skill is a capability package for AI Agents. Once installed, your Agent gains new abilities without any manual configuration. Think of it as "superpowers" for your AI.
-
 ## Install
 
 ```bash

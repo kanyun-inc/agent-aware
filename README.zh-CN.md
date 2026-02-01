@@ -8,10 +8,6 @@
 
 Agent-aware 是一个 **Skill**，让你的 AI Agent（Cursor、Claude Code 等）能够"看到"用户在 Web 应用中的操作——点击、滚动、卡顿、修改等。
 
-## 什么是 Skill？
-
-Skill 是 AI Agent 的能力扩展包。安装后，你的 Agent 会自动获得新能力，无需任何手动配置。可以理解为给 AI 赋予"超能力"。
-
 ## 安装
 
 ```bash
