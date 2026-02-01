@@ -1,262 +1,175 @@
 ---
 name: agent-aware
-description: Monitor user behavior and errors in web applications, automatically analyze and fix issues. Includes basic API usage and advanced auto-fix monitoring workflow. Use when generating or modifying web applications.
+description: Web 应用实时监控与自动修复。检测用户挫折信号（狂点、无效点击）和运行时错误，引导修复。在生成或修改 Web 应用代码后主动使用，或调试用户体验问题时使用。
 ---
 
 # Agent-aware 使用指南
 
-本指南帮助你感知用户在 Web 应用中的行为，包括基础 API 使用和高级自动监控修复功能。
+Web 应用用户行为实时监控与问题自动检测工具。
+
+## 适用场景
+
+- 生成或修改 Web 应用代码后，主动监控用户测试
+- 调试用户体验问题（点击无响应、操作卡顿）
+- 检测运行时错误并定位修复
 
 ---
 
-# 前置条件
+## 快速开始
 
-使用前确保已在**用户项目中**安装（开发依赖）：
+### 前置条件
+
+在**当前项目根目录**（包含 `package.json` 的目录）安装依赖：
 
 ```bash
+# 确保在项目根目录执行
 npm install --save-dev @reskill/agent-aware-server @reskill/agent-aware
 ```
 
-检查方式：`npm list @reskill/agent-aware-server @reskill/agent-aware`
+### 最小配置
 
----
-
-# 第一部分：基础使用
-
-## 工作流程
-
-```
-1. 启动 Server → 2. 初始化 SDK → 3. 用户测试 → 4. 查询 API → 5. 优化代码
-```
-
-## 第一步：启动 Server
+**1. 启动服务**
 
 ```bash
 npx agent-aware-server start
-curl http://localhost:4100/health  # 验证
 ```
 
-## 第二步：初始化 SDK
+**2. 在应用入口初始化 SDK**
 
-在用户项目入口文件中：
+找到入口文件（React: `main.tsx`，Vue: `main.ts`，Next.js: `app/layout.tsx`），添加：
 
 ```tsx
 import { initAgentAware } from '@reskill/agent-aware'
 initAgentAware()
 ```
 
-**位置**：React/Vite: `main.tsx` | Vue: `main.ts` | Next.js: `app/layout.tsx`（需 `useEffect`）
-
-## 第三步：查询用户行为
+**3. 查询问题数据**
 
 ```bash
-curl http://localhost:4100/summary                                    # 挫折指数
-curl "http://localhost:4100/behaviors?types=rage_click,dead_click"   # 问题行为
-curl http://localhost:4100/errors                                     # 错误
+curl http://localhost:4100/summary                                   # 挫折指数
+curl "http://localhost:4100/behaviors?types=rage_click,dead_click"  # 行为问题
+curl http://localhost:4100/errors                                    # 运行时错误
 ```
-
-## 第四步：解读数据并优化
-
-| 信号 | 修复方式 |
-|------|---------|
-| `rage_click` | 添加 loading 状态 |
-| `dead_click` | 检查事件绑定 |
-| `runtime` 错误 | 查看 stack trace |
 
 ---
 
-# 第二部分：高级功能 - 主动监控和修复
+## 主动监控工作流
 
-## 何时使用
+**触发时机**：生成或修改 Web 应用代码后立即执行。不要等用户报告 bug。
 
-在完成 Web 应用代码生成或修改关键交互逻辑后**自动启用**。**不要等用户报告 bug！**
-
-## 阶段 1：准备（代码生成后立即执行）
+### 阶段 1：准备
 
 ```bash
-curl -s http://localhost:4100/health || echo "请运行: npx agent-aware-server start"
+# 验证服务是否运行
+curl -s http://localhost:4100/health || npx agent-aware-server start
+
+# 清除旧数据
 curl -X DELETE http://localhost:4100/behaviors
 curl -X DELETE http://localhost:4100/errors
-rm -f .agent-aware/alert/error.json .agent-aware/alert/behavior.json
+rm -f .agent-aware/alert/*.json
 ```
 
-## 阶段 2：启动监控
+### 阶段 2：启动监控
 
-告诉用户：
+告知用户：
 
 ```
-✅ 代码已生成！我会监控 2 分钟，请测试页面。发现问题会立即修复。
+✅ 代码就绪！监控 2 分钟，请测试页面 - 发现问题会自动修复。
 ```
 
-执行监听脚本：
+执行监控脚本（如有）：
 
 ```bash
 bash scripts/monitor.sh 120 5
-# 参数：[监听秒数] [检查间隔秒数] [项目根目录(可选)]
+# 参数：[监控秒数] [检查间隔秒数] [项目根目录]
 ```
 
-**脚本行为**：
-- 监听 `.agent-aware/alert/error.json` 和 `.agent-aware/alert/behavior.json`
-- 优先检测 error.json（Critical）
-- 发现文件 → 输出内容并 `exit 1`
-- 超时无问题 → `exit 0`
-
-## 阶段 3：处理问题（脚本 exit 1 时）
+或手动轮询检查：
 
 ```bash
+# 每 5 秒检查一次，持续 2 分钟
+for i in {1..24}; do
+  [ -f ".agent-aware/alert/error.json" ] && cat .agent-aware/alert/error.json && break
+  [ -f ".agent-aware/alert/behavior.json" ] && cat .agent-aware/alert/behavior.json && break
+  sleep 5
+done
+```
+
+### 阶段 3：处理检测到的问题
+
+**错误优先**：error.json 比 behavior.json 优先级更高。
+
+```bash
+# 检测到运行时错误
 if [ -f ".agent-aware/alert/error.json" ]; then
-  cat .agent-aware/alert/error.json | jq '.'
+  cat .agent-aware/alert/error.json
   curl -s "http://localhost:4100/errors?limit=5"
-  # 分析修复后：
+  # 分析错误，修复代码，然后清除：
   rm -f .agent-aware/alert/error.json
   curl -X DELETE http://localhost:4100/errors
+
+# 检测到行为问题
 elif [ -f ".agent-aware/alert/behavior.json" ]; then
-  cat .agent-aware/alert/behavior.json | jq '.'
+  cat .agent-aware/alert/behavior.json
   curl -s "http://localhost:4100/behaviors?types=rage_click,dead_click&limit=5"
-  # 分析修复后：
+  # 分析问题，修复代码，然后清除：
   rm -f .agent-aware/alert/behavior.json
   curl -X DELETE http://localhost:4100/behaviors
 fi
 ```
 
-## 阶段 4：最终分析
+### 阶段 4：生成报告
 
 ```bash
-SUMMARY=$(curl -s http://localhost:4100/summary)
-ERROR_SUMMARY=$(curl -s "http://localhost:4100/errors/summary")
+curl -s http://localhost:4100/summary
+curl -s http://localhost:4100/errors/summary
 ```
 
-生成报告：
+报告模板：
 
 ```
-📊 监控报告
-✅ 挫折指数：[frustrationScore]/100
-🚨 错误统计：[totalErrors] 个
-综合评价：[良好/需要优化/存在问题]
-```
-
----
-
-# 数据解读
-
-| 类型 | 信号 | 行动 |
-|------|------|------|
-| **错误** | `runtime` | 立即修复（检查 stack） |
-| | `unhandled_rejection` | 修复 Promise 错误 |
-| **行为** | `rage_click` | 添加 loading 状态 |
-| | `dead_click` | 检查事件绑定 |
-| **挫折** | 61+ | 需要修复 |
-| | 41-60 | 建议优化 |
-| | 0-40 | 无需修复 |
-
----
-
-# 架构说明
-
-## 目录结构
-
-```
-用户项目/.agent-aware/
-├── alert/                 # 告警目录（供 Agent 监控）
-│   ├── error.json         # 错误告警（最多 100 条历史）
-│   └── behavior.json      # 行为告警（最多 100 条历史）
-└── detail/                # 详细数据（供 HTTP API 查询）
-    ├── errors.json        # 错误详细数据（最多 1000 条）
-    └── behaviors.json     # 行为详细数据（最多 1000 条）
-```
-
-## 告警文件格式
-
-```json
-{
-  "version": "1.0",
-  "alerts": [
-    { "timestamp": "...", "severity": "critical", "type": "error", "summary": "...", "details": {...} }
-  ]
-}
-```
-
-## 工作流程
-
-```
-Server 检测 → 写入 alert/ 文件 → monitor.sh 发现 → Agent 处理
+📊 监控完成
+━━━━━━━━━━━━━━━━━━━━━━━━
+✅ 挫折指数：[X]/100
+🚨 错误数：[N]
+📋 状态：[良好 / 建议优化 / 需要修复]
 ```
 
 ---
 
-# 用户沟通话术
+## 问题参考表
 
-**开始监控**：
-```
-✅ 代码已生成！我会持续监控 2 分钟。请测试页面，发现问题会立即修复。
-```
+| 类型 | 信号 | 含义 | 修复方式 |
+|------|------|------|----------|
+| 错误 | `runtime` | JS 运行时错误 | 查看堆栈，修复代码 |
+| 错误 | `unhandled_rejection` | Promise 未处理 | 添加 catch 处理 |
+| 行为 | `rage_click` | 用户狂点（3次+） | 添加 loading/反馈 |
+| 行为 | `dead_click` | 点击无响应 | 检查事件绑定 |
 
-**发现问题**：
-```
-⚠️ 发现问题并已修复：
-**问题**：Submit 按钮点击无响应
-**原因**：缺少 loading 状态
-**修复**：已添加 loading 和禁用逻辑
-请刷新页面继续测试。
-```
-
-**监控完成**：
-```
-📊 监控完成！
-✅ 运行状况：良好（挫折指数 15/100）
-需要我应用优化吗？
-```
+| 挫折指数 | 评估 | 建议 |
+|----------|------|------|
+| 0-40 | 良好 | 无需处理 |
+| 41-60 | 一般 | 建议优化 |
+| 61+ | 差 | 必须修复 |
 
 ---
 
-# 故障排查
+## 退出与清理【必须执行】
 
-| 问题 | 解决方案 |
-|------|---------|
-| Server 未运行 | `npx agent-aware-server start` |
-| SDK 未初始化 | 检查入口文件是否有 `initAgentAware()` |
-| 无数据 | 确保在浏览器中测试了页面 |
+### 触发清理的信号
 
----
+当用户表达以下意图时，执行清理：
 
-# 进阶：对话开始时主动检查
+- "测试完了"、"完成了"、"done"、"ok了"
+- "可以了"、"没问题"、"looks good"
+- "不需要监控了"、"停止"
+- 用户提出新的无关任务
 
-```bash
-if [ -f ".agent-aware/alert/error.json" ]; then
-  echo "🚨 发现运行时错误，要先修复吗？"
-  cat .agent-aware/alert/error.json | jq '.alerts[-1].summary'
-elif [ -f ".agent-aware/alert/behavior.json" ]; then
-  echo "⚠️ 发现用户行为问题，要先修复吗？"
-  cat .agent-aware/alert/behavior.json | jq '.alerts[-1].summary'
-fi
-```
+### 清理步骤
 
----
+**步骤 1：移除 SDK 初始化代码**
 
-# 最佳实践
-
-1. **先启动 Server**：`npx agent-aware-server start`
-2. **尽早初始化 SDK**：在应用入口调用 `initAgentAware()`
-3. **清空旧数据**：监控前使用 `DELETE /behaviors` 和 `DELETE /errors`
-4. **优先修复错误**：error > behavior
-5. **控制监控时长**：不超过 2 分钟
-
----
-
-# 退出条件与清理
-
-## 触发退出的关键词
-
-当用户说以下任一关键词时，执行清理：
-- "测试完了"、"可以了"、"完成了"、"没问题"
-- "不用自动修改"、"不需要监控了"
-- 用户提出新需求
-
-## 清理步骤【必须执行】
-
-**1. 删除入口文件中的 SDK 初始化代码**：
-
-从入口文件（`main.tsx`、`main.ts`、`app/layout.tsx` 等）中移除：
+从入口文件中删除：
 
 ```tsx
 // 删除这两行
@@ -264,39 +177,81 @@ import { initAgentAware } from '@reskill/agent-aware'
 initAgentAware()
 ```
 
-**2. 停止 Server**：
+**步骤 2：停止服务**
 
 ```bash
-# 查找并停止 agent-aware-server 进程
 pkill -f "agent-aware-server" || true
-# 或手动在运行 Server 的终端按 Ctrl+C
 ```
 
-**3. 清理告警文件（可选）**：
+**步骤 3：删除监控数据**
 
 ```bash
-rm -rf .agent-aware/alert/
+rm -rf .agent-aware
 ```
 
-**清理完成话术**：
+**步骤 4：确认清理**
+
 ```
-✅ 监控已结束，已清理：
-- 移除了入口文件中的 SDK 初始化代码
-- 停止了 Server 服务
-项目代码已恢复到正常状态。
+✅ 监控结束，清理完成：
+- 已移除入口文件中的 SDK 初始化代码
+- 已停止服务进程
+- 已删除 .agent-aware 监控数据
+
+项目代码已恢复正常状态。
 ```
 
 ---
 
-# 常见问题
+## 目录结构说明
 
-**Q: 如何确定项目根目录？**
-A: 包含 `package.json` 的目录，监控脚本会在该目录下查找 `.agent-aware/alert/`。
+```
+项目目录/
+└── .agent-aware/
+    ├── alert/             # 告警文件（Agent 监听）
+    │   ├── error.json     # 运行时错误告警
+    │   └── behavior.json  # 行为问题告警
+    └── detail/            # 详细数据（HTTP API 查询）
+        ├── errors.json    # 完整错误记录
+        └── behaviors.json # 完整行为记录
+```
 
-**Q: 两个检测文件同时存在时？**
-A: 优先报告 `error.json`（运行时错误更严重）。
+---
 
-**Q: 如何配置 Server 输出位置？**
+## 沟通话术模板
+
+**开始监控：**
+```
+✅ 代码就绪！监控 2 分钟，请测试页面 - 发现问题会自动修复。
+```
+
+**发现并修复问题：**
+```
+⚠️ 发现问题并已修复：
+• 问题：[提交按钮无响应]
+• 原因：[缺少 loading 状态]
+• 修复：[已添加 loading 和禁用逻辑]
+请刷新页面继续测试。
+```
+
+**监控完成：**
+```
+📊 完成！状态：良好（挫折指数：15/100）
+需要应用建议的优化吗？
+```
+
+---
+
+## 故障排查
+
+| 问题 | 解决方案 |
+|------|----------|
+| 服务未运行 | `npx agent-aware-server start` |
+| 无数据 | 检查入口文件是否有 `initAgentAware()` |
+| 未采集到行为 | 确保在浏览器中实际测试了页面 |
+| 服务端口冲突 | 检查 4100 端口是否被占用 |
+
+**自定义项目根目录：**
+
 ```bash
 USER_PROJECT_ROOT=/path/to/project npx agent-aware-server start
 # 或
@@ -305,10 +260,11 @@ npx agent-aware-server start --project-root /path/to/project
 
 ---
 
-# 总结
+## 最佳实践
 
-**基础模式**：查询行为数据 → 识别挫折信号 → 优化代码
-
-**高级模式**：代码生成后立即监控 → 主动发现问题 → 自动修复并反馈
-
-用户体验：无需主动报告 bug，更快的修复，更流畅的开发。
+1. **先启动服务** - 监控前确保 server 运行
+2. **尽早初始化** - SDK 应在应用入口最先调用
+3. **清除旧数据** - 每次监控前清空历史
+4. **错误优先** - 先修复 error，再处理 behavior
+5. **控制时长** - 监控最多 2 分钟
+6. **务必清理** - 测试结束后移除 SDK 代码并删除 `.agent-aware`
