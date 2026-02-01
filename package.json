@@ -24,8 +24,7 @@
     "release": "pnpm publish -r --access public"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.27.0",
-    "serve": "^14.2.5"
+    "@changesets/cli": "^2.27.0"
   },
   "engines": {
     "node": ">=18.0.0"
