@@ -1,12 +1,12 @@
 # Agent-aware
 
-**一个让 AI Agent 感知用户行为的技能（Skill）**
+**感知用户行为的 Skill**
 
 [English](./README.md)
 
 ---
 
-Agent-aware 是一个 **技能（Skill）**，让你的 AI Agent（Cursor、Claude Code 等）能够"看到"用户在 Web 应用中的操作——点击、滚动、卡顿、修改等。
+Agent-aware 是一个 **Skill**，让你的 AI Agent（Cursor、Claude Code 等）能够"看到"用户在 Web 应用中的操作——点击、滚动、卡顿、修改等。
 
 ## 什么是 Skill？
 
