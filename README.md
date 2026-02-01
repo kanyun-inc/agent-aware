@@ -1,12 +1,16 @@
 # Agent-aware
 
-**Bridging the Gap Between Agents and User Actions.**
+**An AI Agent Skill for Perceiving User Behavior**
 
 [简体中文](./README.zh-CN.md)
 
 ---
 
-Agent-aware enables your AI Agent (Cursor, Claude Code, etc.) to **see** what users do in web apps—clicks, scrolls, frustration, edits, and more.
+Agent-aware is a **skill** that gives your AI Agent (Cursor, Claude Code, etc.) the ability to **see** what users do in web apps—clicks, scrolls, frustration, edits, and more.
+
+## What is a Skill?
+
+A skill is a capability package for AI Agents. Once installed, your Agent gains new abilities without any manual configuration. Think of it as "superpowers" for your AI.
 
 ## Install
 
@@ -67,9 +71,8 @@ pnpm test        # Run tests
 
 ```
 agent-aware/
-├── skill/           # AI Agent usage guide
-│   ├── SKILL.md     # Complete usage guide (basic + advanced)
-│   ├── README.md    # Skill documentation
+├── skill/           # Skill definition (for AI Agents)
+│   ├── SKILL.md     # Complete usage guide (read by AI Agent)
 │   └── scripts/     # Monitoring scripts
 ├── packages/
 │   ├── sdk/         # Browser SDK (behavior tracking)
