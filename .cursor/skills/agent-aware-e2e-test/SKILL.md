@@ -67,7 +67,7 @@ pnpm build
 - 项目名称随机（如 `test-app-{timestamp}`）
 - 技术栈：React + Vite
 - 包含完整的项目结构（package.json、vite.config、src/main.jsx、src/App.jsx 等）
-- 在 `package.json` 中添加 workspace 依赖：`"@reskill/agent-aware": "workspace:*"`
+- 在 `package.json` 中添加本地依赖：`"@reskill/agent-aware": "link:../../packages/sdk"`
 - 在入口文件中初始化 SDK：`initAgentAware({ debug: true })`
 - **故意埋入 2-3 个问题**（dead_click、rage_click、runtime_error）
 - **添加测试提示区域**，告诉用户哪些按钮会触发什么问题
@@ -88,18 +88,25 @@ pnpm build
 ## 2.1 启动服务
 
 ```bash
-# 启动 Server（替换 [项目名] 为实际项目名）
+# 1. 将 examples 加入 workspace（否则 pnpm install 无法解析 link: 依赖）
+# 在 pnpm-workspace.yaml 中添加：
+#   - 'examples/*'
+
+# 2. 安装依赖
+pnpm install --no-frozen-lockfile
+
+# 3. 启动 Server（替换 [项目名] 为实际项目名）
 USER_PROJECT_ROOT=$(pwd)/examples/[项目名] node packages/server/dist/cli.js start &
 
-# 进入项目目录，安装依赖并启动
-cd examples/[项目名]
-pnpm install
-pnpm dev &
+# 4. 启动前端开发服务器
+pnpm --filter [项目名] dev &
 
-# 清空旧数据
+# 5. 清空旧数据
 curl -X DELETE http://localhost:4100/behaviors
 curl -X DELETE http://localhost:4100/errors
 ```
+
+**注意**：必须先将 `examples/*` 加入 `pnpm-workspace.yaml`，否则 `link:../../packages/sdk` 依赖无法正确解析。
 
 ## 2.2 提示用户预览
 
@@ -173,12 +180,18 @@ Cmd+Shift+P → "Simple Browser: Show" → 输入 http://localhost:5173
 # Phase 4: 清理
 
 ```bash
-pkill -f "agent-aware-server" || true
+# 1. 停止进程
+pkill -f "agent-aware" || true
 pkill -f "vite" || true
 
-# 可选：删除测试项目
+# 2. 删除测试项目
 rm -rf examples/test-app-*
+
+# 3. 恢复 pnpm-workspace.yaml（移除 examples/*）
+# 将 pnpm-workspace.yaml 恢复为只包含 packages/*
 ```
+
+**重要**：清理时务必恢复 `pnpm-workspace.yaml`，移除 `examples/*` 配置。
 
 ---
 

@@ -59,9 +59,22 @@ Just talk to your AI and let it build web apps. It now has eyes.
 git clone https://github.com/anthropics/agent-aware.git
 cd agent-aware
 pnpm install
-pnpm dev:server  # Start server
-pnpm test        # Run tests
+pnpm build       # Build packages
+pnpm dev:server  # Start server in dev mode
+pnpm test        # Run unit tests
 ```
+
+## E2E Testing
+
+In Cursor, tell the Agent **"test agent-aware"** and it will automatically:
+
+1. **Generate test app** — Create a random React + Vite project with 2-3 intentional bugs (dead_click, rage_click, runtime_error)
+2. **Start monitoring** — Run Server and example app
+3. **Detect issues** — Automatically detect problems when user tests the page
+4. **Fix issues** — Analyze root cause and auto-fix the code
+5. **Generate report** — Output test report to verify fixes
+
+See `.cursor/skills/agent-aware-e2e-test/SKILL.md` for details.
 
 ## Project Structure
 

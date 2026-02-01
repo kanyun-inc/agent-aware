@@ -11,7 +11,7 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@reskill/agent-aware": "workspace:*",
+    "@reskill/agent-aware": "link:../../packages/sdk",
     "@vitejs/plugin-react": "^4.2.0",
     "vite": "^5.0.0"
   }
