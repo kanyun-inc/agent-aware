@@ -58,9 +58,22 @@ npx reskill@latest install agent-aware
 git clone https://github.com/anthropics/agent-aware.git
 cd agent-aware
 pnpm install
-pnpm dev:server  # 启动 Server
-pnpm test        # 运行测试
+pnpm build       # 构建 packages
+pnpm dev:server  # 开发模式启动 Server
+pnpm test        # 运行单元测试
 ```
+
+## E2E 测试
+
+在 Cursor 中对 Agent 说 **"测试 agent-aware"**，Agent 会自动：
+
+1. **生成测试应用** — 随机创建一个 React + Vite 项目，预埋 2-3 个问题（dead_click、rage_click、runtime_error）
+2. **启动监控** — 运行 Server 和示例应用
+3. **检测问题** — 用户测试页面时，自动检测到问题
+4. **修复问题** — 分析问题原因并自动修复代码
+5. **生成报告** — 输出测试报告，验证修复效果
+
+详细流程参见 `.cursor/skills/agent-aware-e2e-test/SKILL.md`。
 
 ## 项目结构
 
