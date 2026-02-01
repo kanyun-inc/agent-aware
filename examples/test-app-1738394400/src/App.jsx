@@ -25,12 +25,9 @@ export default function App() {
   }
 
   const handleViewStats = () => {
+    // BUG: 当没有迟到记录时，lateRecord 为 undefined，访问 .date 会报错
     const lateRecord = records.find(r => r.status === 'late')
-    if (lateRecord) {
-      console.log('最近迟到:', lateRecord.date)
-    } else {
-      console.log('没有迟到记录')
-    }
+    console.log('最近迟到:', lateRecord.date) // 这里会抛出 Cannot read properties of undefined (reading 'date')
     setStats({
       total: records.length,
       late: records.filter(r => r.status === 'late').length
@@ -91,11 +88,8 @@ export default function App() {
 
       <div className="section actions">
         <button className="btn info" onClick={handleViewStats}>查看统计</button>
-        <button className="btn secondary" id="export-btn" onClick={() => {
-          handleExport()
-          setExportMsg('✅ 已导出 ' + records.length + ' 条记录')
-          setTimeout(() => setExportMsg(null), 2000)
-        }}>导出记录</button>
+        {/* BUG: 缺少 onClick 绑定，这是一个 Dead Click */}
+        <button className="btn secondary" id="export-btn">导出记录</button>
       </div>
       {exportMsg && <div className="section" style={{textAlign:'center',color:'#22c55e'}}>{exportMsg}</div>}
 

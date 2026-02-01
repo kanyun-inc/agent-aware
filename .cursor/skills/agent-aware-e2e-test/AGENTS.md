@@ -6,7 +6,7 @@
 
 在 `examples/` 下**随机生成一个 React + Vite 项目**：
 - 项目名随机（如 `test-app-{timestamp}`）
-- 添加 workspace 依赖：`"@reskill/agent-aware": "workspace:*"`
+- 添加本地依赖：`"@reskill/agent-aware": "link:../../packages/sdk"`
 - 入口文件初始化 SDK：`initAgentAware({ debug: true })`
 - 埋入 2-3 个问题（dead_click、rage_click、runtime_error）
 - 添加测试提示区域
