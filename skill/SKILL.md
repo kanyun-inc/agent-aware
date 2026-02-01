@@ -1,270 +1,318 @@
 ---
 name: agent-aware
-description: Web 应用实时监控与自动修复。检测用户挫折信号（狂点、无效点击）和运行时错误，引导修复。在生成或修改 Web 应用代码后主动使用，或调试用户体验问题时使用。
+description: Real-time web application monitoring and auto-remediation. Detects user frustration signals (rage clicks, dead clicks) and runtime errors, then guides fixes. Use proactively after generating or modifying web application code, or when debugging UX issues.
 ---
 
-# Agent-aware 使用指南
+# Agent-aware Skill Reference
 
-Web 应用用户行为实时监控与问题自动检测工具。
-
-## 适用场景
-
-- 生成或修改 Web 应用代码后，主动监控用户测试
-- 调试用户体验问题（点击无响应、操作卡顿）
-- 检测运行时错误并定位修复
+This skill enables AI agents to perceive and respond to user behavior in web applications. It covers both basic API usage and advanced autonomous monitoring with auto-remediation capabilities.
 
 ---
 
-## 快速开始
+# Prerequisites
 
-### 前置条件
-
-在**当前项目根目录**（包含 `package.json` 的目录）安装依赖：
+Ensure the following packages are installed as **dev dependencies** in the target project:
 
 ```bash
-# 确保在项目根目录执行
+# Execute from the project root directory
 npm install --save-dev @reskill/agent-aware-server @reskill/agent-aware
 ```
 
-### 最小配置
+Verify installation: `npm list @reskill/agent-aware-server @reskill/agent-aware`
 
-**1. 启动服务**
+---
+
+# Part 1: Basic Usage
+
+## Workflow Overview
+
+```
+1. Start Server → 2. Initialize SDK → 3. User Testing → 4. Query API → 5. Optimize Code
+```
+
+## Step 1: Start the Server
 
 ```bash
 npx agent-aware-server start
+curl http://localhost:4100/health  # Verify server is running
 ```
 
-**2. 在应用入口初始化 SDK**
+## Step 2: Initialize the SDK
 
-找到入口文件（React: `main.tsx`，Vue: `main.ts`，Next.js: `app/layout.tsx`），添加：
+Add to the project's entry file:
 
 ```tsx
 import { initAgentAware } from '@reskill/agent-aware'
 initAgentAware()
 ```
 
-**3. 查询问题数据**
+**Entry file locations**: React/Vite: `main.tsx` | Vue: `main.ts` | Next.js: `app/layout.tsx` (requires `useEffect`)
+
+## Step 3: Query User Behavior Data
 
 ```bash
-curl http://localhost:4100/summary                                   # 挫折指数
-curl "http://localhost:4100/behaviors?types=rage_click,dead_click"  # 行为问题
-curl http://localhost:4100/errors                                    # 运行时错误
+curl http://localhost:4100/summary                                    # Frustration index
+curl "http://localhost:4100/behaviors?types=rage_click,dead_click"   # Problem behaviors
+curl http://localhost:4100/errors                                     # Runtime errors
 ```
+
+## Step 4: Interpret Data and Optimize
+
+| Signal | Remediation |
+|--------|-------------|
+| `rage_click` | Add loading state / disable button during async operations |
+| `dead_click` | Verify event handler binding |
+| `runtime` error | Analyze stack trace and fix root cause |
 
 ---
 
-## 主动监控工作流
+# Part 2: Advanced — Autonomous Monitoring and Auto-Fix
 
-**触发时机**：生成或修改 Web 应用代码后立即执行。不要等用户报告 bug。
+## When to Use
 
-### 阶段 1：准备
+Activate **automatically** after completing web application code generation or modifying critical interaction logic. **Do not wait for user bug reports.**
+
+## Phase 1: Preparation (Execute Immediately After Code Generation)
 
 ```bash
-# 验证服务是否运行
-curl -s http://localhost:4100/health || npx agent-aware-server start
-
-# 清除旧数据
+curl -s http://localhost:4100/health || echo "Run: npx agent-aware-server start"
 curl -X DELETE http://localhost:4100/behaviors
 curl -X DELETE http://localhost:4100/errors
 rm -f .agent-aware/alert/*.json
 ```
 
-### 阶段 2：启动监控
+## Phase 2: Start Monitoring
 
-告知用户：
+Inform the user:
 
 ```
-✅ 代码就绪！监控 2 分钟，请测试页面 - 发现问题会自动修复。
+✅ Code generation complete. Monitoring for 2 minutes — please test the page. Issues will be fixed immediately upon detection.
 ```
 
-执行监控脚本（如有）：
+Execute the monitoring script:
 
 ```bash
 bash scripts/monitor.sh 120 5
-# 参数：[监控秒数] [检查间隔秒数] [项目根目录]
+# Parameters: [duration_seconds] [check_interval_seconds] [project_root (optional)]
 ```
 
-或手动轮询检查：
+**Script behavior**:
+- Monitors `.agent-aware/alert/error.json` and `.agent-aware/alert/behavior.json`
+- Prioritizes `error.json` (critical severity)
+- On file detection → outputs contents and exits with code `1`
+- On timeout without issues → exits with code `0`
+
+## Phase 3: Issue Handling (On Script Exit Code 1)
 
 ```bash
-# 每 5 秒检查一次，持续 2 分钟
-for i in {1..24}; do
-  [ -f ".agent-aware/alert/error.json" ] && cat .agent-aware/alert/error.json && break
-  [ -f ".agent-aware/alert/behavior.json" ] && cat .agent-aware/alert/behavior.json && break
-  sleep 5
-done
-```
-
-### 阶段 3：处理检测到的问题
-
-**错误优先**：error.json 比 behavior.json 优先级更高。
-
-```bash
-# 检测到运行时错误
+# Runtime error detected
 if [ -f ".agent-aware/alert/error.json" ]; then
   cat .agent-aware/alert/error.json
   curl -s "http://localhost:4100/errors?limit=5"
-  # 分析错误，修复代码，然后清除：
+  # After analysis and fix:
   rm -f .agent-aware/alert/error.json
   curl -X DELETE http://localhost:4100/errors
 
-# 检测到行为问题
+# Behavior issue detected
 elif [ -f ".agent-aware/alert/behavior.json" ]; then
   cat .agent-aware/alert/behavior.json
   curl -s "http://localhost:4100/behaviors?types=rage_click,dead_click&limit=5"
-  # 分析问题，修复代码，然后清除：
+  # After analysis and fix:
   rm -f .agent-aware/alert/behavior.json
   curl -X DELETE http://localhost:4100/behaviors
 fi
 ```
 
-### 阶段 4：生成报告
+## Phase 4: Final Analysis
 
 ```bash
 curl -s http://localhost:4100/summary
 curl -s http://localhost:4100/errors/summary
 ```
 
-报告模板：
+Generate report:
 
 ```
-📊 监控完成
-━━━━━━━━━━━━━━━━━━━━━━━━
-✅ 挫折指数：[X]/100
-🚨 错误数：[N]
-📋 状态：[良好 / 建议优化 / 需要修复]
+📊 Monitoring Report
+✅ Frustration Index: [frustrationScore]/100
+🚨 Error Count: [totalErrors]
+Assessment: [Healthy / Needs Optimization / Issues Detected]
 ```
 
 ---
 
-## 问题参考表
+# Data Interpretation Reference
 
-| 类型 | 信号 | 含义 | 修复方式 |
-|------|------|------|----------|
-| 错误 | `runtime` | JS 运行时错误 | 查看堆栈，修复代码 |
-| 错误 | `unhandled_rejection` | Promise 未处理 | 添加 catch 处理 |
-| 行为 | `rage_click` | 用户狂点（3次+） | 添加 loading/反馈 |
-| 行为 | `dead_click` | 点击无响应 | 检查事件绑定 |
-
-| 挫折指数 | 评估 | 建议 |
-|----------|------|------|
-| 0-40 | 良好 | 无需处理 |
-| 41-60 | 一般 | 建议优化 |
-| 61+ | 差 | 必须修复 |
+| Category | Signal | Action |
+|----------|--------|--------|
+| **Errors** | `runtime` | Fix immediately (examine stack trace) |
+| | `unhandled_rejection` | Handle Promise rejection |
+| **Behavior** | `rage_click` | Add loading state / feedback |
+| | `dead_click` | Verify event handler binding |
+| **Frustration Score** | 61+ | Requires immediate attention |
+| | 41-60 | Optimization recommended |
+| | 0-40 | Acceptable — no action needed |
 
 ---
 
-## 退出与清理【必须执行】
+# Architecture Overview
 
-### 触发清理的信号
+## Directory Structure
 
-当用户表达以下意图时，执行清理：
+```
+<project_root>/.agent-aware/
+├── alert/                 # Alert files (for Agent monitoring)
+│   ├── error.json         # Error alerts (max 100 entries)
+│   └── behavior.json      # Behavior alerts (max 100 entries)
+└── detail/                # Detailed data (for HTTP API queries)
+    ├── errors.json        # Error details (max 1000 entries)
+    └── behaviors.json     # Behavior details (max 1000 entries)
+```
 
-- "测试完了"、"完成了"、"done"、"ok了"
-- "可以了"、"没问题"、"looks good"
-- "不需要监控了"、"停止"
-- 用户提出新的无关任务
+## Alert File Format
 
-### 清理步骤
+```json
+{
+  "version": "1.0",
+  "alerts": [
+    { "timestamp": "...", "severity": "critical", "type": "error", "summary": "...", "details": {...} }
+  ]
+}
+```
 
-**步骤 1：移除 SDK 初始化代码**
+## Data Flow
 
-从入口文件中删除：
+```
+Server Detection → Write to alert/ → monitor.sh Detection → Agent Processing
+```
+
+---
+
+# User Communication Templates
+
+**Monitoring Start**:
+```
+✅ Code generation complete. I'll monitor for 2 minutes while you test. Any issues detected will be fixed immediately.
+```
+
+**Issue Detected and Fixed**:
+```
+⚠️ Issue detected and resolved:
+**Problem**: Submit button unresponsive on click
+**Root Cause**: Missing loading state during async operation
+**Fix Applied**: Added loading indicator and button disable logic
+Please refresh and continue testing.
+```
+
+**Monitoring Complete**:
+```
+📊 Monitoring Complete
+✅ Status: Healthy (Frustration Index: 15/100)
+Would you like me to apply any additional optimizations?
+```
+
+---
+
+# Troubleshooting
+
+| Issue | Resolution |
+|-------|------------|
+| Server not running | Execute `npx agent-aware-server start` |
+| SDK not initialized | Verify `initAgentAware()` is called in entry file |
+| No data collected | Ensure page was tested in browser with DevTools network tab open |
+
+---
+
+# Advanced: Proactive Check on Conversation Start
+
+```bash
+if [ -f ".agent-aware/alert/error.json" ]; then
+  echo "🚨 Runtime error detected. Address this first?"
+  cat .agent-aware/alert/error.json | jq '.alerts[-1].summary'
+elif [ -f ".agent-aware/alert/behavior.json" ]; then
+  echo "⚠️ User behavior issue detected. Address this first?"
+  cat .agent-aware/alert/behavior.json | jq '.alerts[-1].summary'
+fi
+```
+
+---
+
+# Best Practices
+
+1. **Start Server First**: Always run `npx agent-aware-server start` before testing
+2. **Initialize SDK Early**: Call `initAgentAware()` at application entry point
+3. **Clear Stale Data**: Use `DELETE /behaviors` and `DELETE /errors` before monitoring sessions
+4. **Prioritize Errors**: Address `error.json` before `behavior.json`
+5. **Limit Monitoring Duration**: Keep sessions under 2 minutes for optimal feedback loops
+
+---
+
+# Exit Conditions and Cleanup
+
+## Trigger Keywords for Exit
+
+Execute cleanup when user indicates any of the following:
+- "Testing complete", "Done", "Looks good", "All set"
+- "Stop monitoring", "No more auto-fixes needed"
+- User initiates a new, unrelated request
+
+## Cleanup Procedure (Mandatory)
+
+**1. Remove SDK initialization from entry file**:
+
+Remove from entry file (`main.tsx`, `main.ts`, `app/layout.tsx`, etc.):
 
 ```tsx
-// 删除这两行
+// Remove these two lines
 import { initAgentAware } from '@reskill/agent-aware'
 initAgentAware()
 ```
 
-**步骤 2：停止服务**
+**2. Stop the Server**:
 
 ```bash
+# Terminate agent-aware-server process
 pkill -f "agent-aware-server" || true
+# Or press Ctrl+C in the terminal running the server
 ```
 
-**步骤 3：删除监控数据**
+**3. Clean up alert files (optional)**:
 
 ```bash
 rm -rf .agent-aware
 ```
 
-**步骤 4：确认清理**
-
+**Cleanup confirmation**:
 ```
-✅ 监控结束，清理完成：
-- 已移除入口文件中的 SDK 初始化代码
-- 已停止服务进程
-- 已删除 .agent-aware 监控数据
-
-项目代码已恢复正常状态。
+✅ Monitoring session ended. Cleanup complete:
+- Removed SDK initialization from entry file
+- Stopped the monitoring server
+Project code restored to production state.
 ```
 
 ---
 
-## 目录结构说明
+# FAQ
 
-```
-项目目录/
-└── .agent-aware/
-    ├── alert/             # 告警文件（Agent 监听）
-    │   ├── error.json     # 运行时错误告警
-    │   └── behavior.json  # 行为问题告警
-    └── detail/            # 详细数据（HTTP API 查询）
-        ├── errors.json    # 完整错误记录
-        └── behaviors.json # 完整行为记录
-```
+**Q: How do I determine the project root directory?**
+A: The directory containing `package.json`. The monitoring script looks for `.agent-aware/alert/` relative to this path.
 
----
+**Q: What happens when both alert files exist?**
+A: `error.json` is prioritized (runtime errors are more severe than behavior issues).
 
-## 沟通话术模板
-
-**开始监控：**
-```
-✅ 代码就绪！监控 2 分钟，请测试页面 - 发现问题会自动修复。
-```
-
-**发现并修复问题：**
-```
-⚠️ 发现问题并已修复：
-• 问题：[提交按钮无响应]
-• 原因：[缺少 loading 状态]
-• 修复：[已添加 loading 和禁用逻辑]
-请刷新页面继续测试。
-```
-
-**监控完成：**
-```
-📊 完成！状态：良好（挫折指数：15/100）
-需要应用建议的优化吗？
-```
-
----
-
-## 故障排查
-
-| 问题 | 解决方案 |
-|------|----------|
-| 服务未运行 | `npx agent-aware-server start` |
-| 无数据 | 检查入口文件是否有 `initAgentAware()` |
-| 未采集到行为 | 确保在浏览器中实际测试了页面 |
-| 服务端口冲突 | 检查 4100 端口是否被占用 |
-
-**自定义项目根目录：**
-
+**Q: How do I configure the Server output location?**
 ```bash
 USER_PROJECT_ROOT=/path/to/project npx agent-aware-server start
-# 或
+# Or
 npx agent-aware-server start --project-root /path/to/project
 ```
 
 ---
 
-## 最佳实践
+# Summary
 
-1. **先启动服务** - 监控前确保 server 运行
-2. **尽早初始化** - SDK 应在应用入口最先调用
-3. **清除旧数据** - 每次监控前清空历史
-4. **错误优先** - 先修复 error，再处理 behavior
-5. **控制时长** - 监控最多 2 分钟
-6. **务必清理** - 测试结束后移除 SDK 代码并删除 `.agent-aware`
+**Basic Mode**: Query behavior data → Identify frustration signals → Optimize code
+
+**Advanced Mode**: Monitor immediately after code generation → Proactively detect issues → Auto-fix and report
+
+**User Experience**: No manual bug reporting required. Faster resolution. Smoother development workflow.

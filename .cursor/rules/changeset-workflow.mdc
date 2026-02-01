@@ -1,0 +1,175 @@
+---
+description: "[Required] Bilingual Changeset Workflow - All code changes must generate bilingual changeset"
+alwaysApply: true
+---
+
+# Bilingual Changeset Workflow [Required]
+
+**⚠️ This is a mandatory rule. All code changes to published packages must generate a bilingual changeset.**
+
+## Scope
+
+The following packages require changeset for code changes:
+- `@reskill/agent-aware` (`packages/sdk/`)
+- `@reskill/agent-aware-server` (`packages/server/`)
+
+## Exceptions
+
+The following changes do **not** require a changeset:
+- Documentation updates (README, comments, etc.)
+- Development tool configurations (.cursor/, .github/, etc.)
+- Example code (examples/)
+- Specification files (specs/)
+- Pure test refactoring (no functional changes)
+
+## Changeset Format [Must Follow]
+
+Each changeset must contain **both English and Chinese** descriptions in the following format:
+
+```markdown
+---
+"@reskill/agent-aware": patch
+---
+
+English summary sentence
+
+- English detail point 1
+- English detail point 2
+
+---
+
+中文摘要
+
+- 中文详细说明 1
+- 中文详细说明 2
+```
+
+## Version Type Selection
+
+- **major**: Breaking Changes
+- **minor**: New features, new capabilities
+- **patch**: Bug fixes, minor improvements, performance optimizations
+
+## Workflow [Must Execute in Order]
+
+```
+1. [Required] Complete code changes and tests
+   ↓
+2. [Required] Create changeset file before commit
+   ↓
+3. [Required] Use pnpm changeset or manually create .changeset/<random-name>.md
+   ↓
+4. [Required] Changeset content must include English + Chinese bilingual descriptions
+   ↓
+5. [Required] Commit changeset file together with code changes
+```
+
+## Changeset File Location
+
+```
+.changeset/
+├── config.json          # changeset configuration
+├── README.md            # changeset documentation
+└── <random-name>.md     # individual pending changesets
+```
+
+## File Naming
+
+Changeset filenames should use randomly generated adjective+noun combinations, for example:
+- `brave-lions-dance.md`
+- `happy-dogs-run.md`
+- `cool-cats-sleep.md`
+
+You can use the `pnpm changeset` command to auto-generate filenames.
+
+## Examples
+
+### Example 1: Bug Fix (patch)
+
+```markdown
+---
+"@reskill/agent-aware": patch
+---
+
+Fix click event not captured on dynamically created elements
+
+- Fixed event delegation to properly capture clicks on dynamic DOM elements
+- Added mutation observer to track new elements
+
+---
+
+修复动态创建元素上的点击事件未被捕获的问题
+
+- 修复了事件委托以正确捕获动态 DOM 元素上的点击
+- 添加了 mutation observer 来追踪新元素
+```
+
+### Example 2: New Feature (minor)
+
+```markdown
+---
+"@reskill/agent-aware": minor
+"@reskill/agent-aware-server": minor
+---
+
+Add keyboard shortcut tracking support
+
+- New `keyboardTracker` module for tracking keyboard shortcuts
+- Support for custom key combination patterns
+- Integration with existing behavior reporting system
+
+---
+
+添加键盘快捷键追踪支持
+
+- 新增 `keyboardTracker` 模块用于追踪键盘快捷键
+- 支持自定义按键组合模式
+- 与现有行为上报系统集成
+```
+
+### Example 3: Breaking Change (major)
+
+```markdown
+---
+"@reskill/agent-aware-server": major
+---
+
+**Breaking Change**: Restructure output directory
+
+- All output files now unified under `.agent-aware/` directory
+- Alert files moved to `.agent-aware/alert/`
+- Detail files moved to `.agent-aware/detail/`
+
+**Migration Guide:**
+1. Update file paths in your monitoring scripts
+2. Alert file format changed from single object to array format
+
+---
+
+**破坏性变更**：重构输出目录结构
+
+- 所有输出文件现在统一到 `.agent-aware/` 目录下
+- 告警文件移至 `.agent-aware/alert/`
+- 详细数据文件移至 `.agent-aware/detail/`
+
+**迁移指南：**
+1. 更新监控脚本中的文件路径
+2. 告警文件格式从单个对象变为数组格式
+```
+
+## Prohibited Actions [Stop if Violated]
+
+- 🚫 **Do not** skip creating changeset after package code changes
+- 🚫 **Do not** write only English or only Chinese (must be bilingual)
+- 🚫 **Do not** write overly simple descriptions (e.g., just "fix bug")
+- 🚫 **Do not** commit changeset separately from code changes
+
+## Checklist
+
+Confirm before commit:
+- [ ] Does the code change involve published packages?
+- [ ] Has a changeset file been created?
+- [ ] Does the changeset contain English description?
+- [ ] Does the changeset contain Chinese description?
+- [ ] Is the version type correct (patch/minor/major)?
+- [ ] Is the changeset file in the same commit?
