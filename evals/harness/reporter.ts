@@ -77,29 +77,12 @@ export class IncrementalReporter {
   private generateReport(): EvalReport {
     const results = this.getResults();
 
-    // 按类型统计
-    const sdkResults = results.filter((r) => r.taskId.includes('-sdk-'));
-    const serverResults = results.filter((r) => r.taskId.includes('-server-'));
-    const e2eResults = results.filter((r) => r.taskId.includes('-e2e-'));
-
     return {
       timestamp: new Date().toISOString(),
       results,
       summary: {
         totalTasks: this.totalTasks,
         passedTasks: results.filter((r) => r.passed).length,
-        sdkTasks: {
-          total: sdkResults.length,
-          passed: sdkResults.filter((r) => r.passed).length,
-        },
-        serverTasks: {
-          total: serverResults.length,
-          passed: serverResults.filter((r) => r.passed).length,
-        },
-        e2eTasks: {
-          total: e2eResults.length,
-          passed: e2eResults.filter((r) => r.passed).length,
-        },
       },
     };
   }
@@ -149,6 +132,9 @@ export class IncrementalReporter {
   ): string {
     const progressPercent = ((completedCount / this.totalTasks) * 100).toFixed(1);
     const isComplete = completedCount === this.totalTasks;
+    const passRate = report.summary.totalTasks
+      ? ((report.summary.passedTasks / report.summary.totalTasks) * 100).toFixed(0)
+      : 0;
 
     const lines: string[] = [
       `# Agent-aware 评估报告`,
@@ -158,28 +144,20 @@ export class IncrementalReporter {
       ``,
       `## 汇总`,
       ``,
-      `| 类型 | 总数 | 通过 | 通过率 |`,
-      `|------|------|------|--------|`,
-      `| SDK | ${report.summary.sdkTasks.total} | ${report.summary.sdkTasks.passed} | ${report.summary.sdkTasks.total ? ((report.summary.sdkTasks.passed / report.summary.sdkTasks.total) * 100).toFixed(0) : 0}% |`,
-      `| Server | ${report.summary.serverTasks.total} | ${report.summary.serverTasks.passed} | ${report.summary.serverTasks.total ? ((report.summary.serverTasks.passed / report.summary.serverTasks.total) * 100).toFixed(0) : 0}% |`,
-      `| E2E | ${report.summary.e2eTasks.total} | ${report.summary.e2eTasks.passed} | ${report.summary.e2eTasks.total ? ((report.summary.e2eTasks.passed / report.summary.e2eTasks.total) * 100).toFixed(0) : 0}% |`,
-      `| **总计** | **${report.summary.totalTasks}** | **${report.summary.passedTasks}** | **${report.summary.totalTasks ? ((report.summary.passedTasks / report.summary.totalTasks) * 100).toFixed(0) : 0}%** |`,
+      `- **总任务数**: ${report.summary.totalTasks}`,
+      `- **通过数**: ${report.summary.passedTasks}`,
+      `- **通过率**: ${passRate}%`,
       ``,
       `## 任务明细`,
       ``,
-      `| 任务 | 类型 | 耗时 | 状态 |`,
-      `|------|------|------|------|`,
+      `| 任务 | 耗时 | 状态 |`,
+      `|------|------|------|`,
     ];
 
     for (const result of report.results) {
       const status = result.passed ? '✅' : '❌';
-      const type = result.taskId.includes('-sdk-')
-        ? 'SDK'
-        : result.taskId.includes('-server-')
-          ? 'Server'
-          : 'E2E';
       lines.push(
-        `| ${result.taskId} | ${type} | ${(result.duration / 1000).toFixed(1)}s | ${status} |`
+        `| ${result.taskId} | ${(result.duration / 1000).toFixed(1)}s | ${status} |`
       );
     }
 
@@ -256,28 +234,12 @@ export class IncrementalReporter {
  * 生成评估报告（兼容接口）
  */
 export function generateReport(results: EvalResult[]): EvalReport {
-  const sdkResults = results.filter((r) => r.taskId.includes('-sdk-'));
-  const serverResults = results.filter((r) => r.taskId.includes('-server-'));
-  const e2eResults = results.filter((r) => r.taskId.includes('-e2e-'));
-
   return {
     timestamp: new Date().toISOString(),
     results,
     summary: {
       totalTasks: results.length,
       passedTasks: results.filter((r) => r.passed).length,
-      sdkTasks: {
-        total: sdkResults.length,
-        passed: sdkResults.filter((r) => r.passed).length,
-      },
-      serverTasks: {
-        total: serverResults.length,
-        passed: serverResults.filter((r) => r.passed).length,
-      },
-      e2eTasks: {
-        total: e2eResults.length,
-        passed: e2eResults.filter((r) => r.passed).length,
-      },
     },
   };
 }

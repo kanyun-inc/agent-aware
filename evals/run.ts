@@ -16,7 +16,7 @@ import { defaultConfig, parseArgs } from './config';
 import { generateReport, saveReport } from './harness/reporter';
 import { runEval } from './harness/runner';
 import type { EvalResult } from './harness/types';
-import { loadTasks, loadTasksByPrefix, loadTasksByType } from './tasks';
+import { loadTasks, loadTasksByPrefix } from './tasks';
 
 async function main() {
   console.log('🚀 [Eval] 启动 Agent-aware 评估系统');
@@ -47,12 +47,7 @@ async function main() {
   // 加载任务
   let tasks;
   if (args.taskId) {
-    // 检查是否是类型过滤
-    if (['sdk', 'server', 'e2e'].includes(args.taskId)) {
-      tasks = await loadTasksByType(args.taskId as 'sdk' | 'server' | 'e2e');
-    } else {
-      tasks = await loadTasksByPrefix(args.taskId);
-    }
+    tasks = await loadTasksByPrefix(args.taskId);
   } else {
     tasks = await loadTasks();
   }
@@ -87,18 +82,6 @@ async function main() {
   console.log(`   总耗时: ${(totalDuration / 1000).toFixed(1)}s`);
   console.log(
     `   通过: ${report.summary.passedTasks}/${report.summary.totalTasks}`
-  );
-
-  // 按类型统计
-  console.log(`\n📈 [Eval] 按类型统计:`);
-  console.log(
-    `   SDK: ${report.summary.sdkTasks.passed}/${report.summary.sdkTasks.total}`
-  );
-  console.log(
-    `   Server: ${report.summary.serverTasks.passed}/${report.summary.serverTasks.total}`
-  );
-  console.log(
-    `   E2E: ${report.summary.e2eTasks.passed}/${report.summary.e2eTasks.total}`
   );
 
   console.log(`\n📄 [Eval] 报告已保存:`);

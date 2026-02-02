@@ -14,7 +14,6 @@ export const task: EvalTask = {
   id: '002-server-data-collection',
   name: 'Server 启动数据收集处理持久化',
   description: '验证 Server 的启动、数据收集和持久化功能',
-  type: 'server',
   graders: [
     {
       type: 'server',

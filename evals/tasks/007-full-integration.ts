@@ -18,7 +18,6 @@ export const task: EvalTask = {
   id: '007-full-integration',
   name: '完整 Agent-Aware 集成测试',
   description: '验证 SDK + Server 在真实 vibe coding 项目中的完整集成流程',
-  type: 'e2e',
   graders: [
     {
       type: 'build',

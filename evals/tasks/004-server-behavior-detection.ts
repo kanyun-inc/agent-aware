@@ -14,7 +14,6 @@ export const task: EvalTask = {
   id: '004-server-behavior-detection',
   name: 'Agent-Aware 行为检测响应',
   description: '验证 Server 对 Dead Click 和 Rage Click 的检测能力',
-  type: 'server',
   graders: [
     {
       type: 'server',

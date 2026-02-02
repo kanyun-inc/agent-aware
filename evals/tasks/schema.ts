@@ -77,16 +77,14 @@ export const graderConfigSchema = z.union([
  * 评估任务 Schema
  */
 export const evalTaskSchema = z.object({
-  /** 任务唯一标识，格式：001-type-name */
-  id: z.string().regex(/^\d{3}-(sdk|server|e2e)-[a-z0-9-]+$/, {
-    message: '任务 ID 格式应为: 001-sdk-task-name 或 001-server-task-name 或 001-e2e-task-name',
+  /** 任务唯一标识，格式：001-task-name */
+  id: z.string().regex(/^\d{3}-[a-z0-9-]+$/, {
+    message: '任务 ID 格式应为: 001-task-name',
   }),
   /** 任务名称 */
   name: z.string().min(1, { message: '任务名称不能为空' }),
   /** 任务描述 */
   description: z.string().min(1, { message: '任务描述不能为空' }),
-  /** 任务类型 */
-  type: z.enum(['sdk', 'server', 'e2e']),
   /** 评分器配置列表 */
   graders: z.array(graderConfigSchema).min(1, { message: '至少需要一个评分器' }),
   /** 任务超时时间（毫秒） */

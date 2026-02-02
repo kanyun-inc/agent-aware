@@ -252,13 +252,6 @@ export async function runEval(
   // 存储结果
   let results: EvalResult[] = [];
 
-  // 按类型分组统计
-  const stats = {
-    sdk: { total: 0, passed: 0 },
-    server: { total: 0, passed: 0 },
-    e2e: { total: 0, passed: 0 },
-  };
-
   const concurrency = config.concurrency || 1;
 
   if (concurrency > 1) {
@@ -268,10 +261,9 @@ export async function runEval(
     }
 
     // 用于追踪端口分配
-    let nextPortOffset = 0;
     const portOffsetLock = { current: 0 };
 
-    results = await runWithConcurrency(tasks, concurrency, async (task, index) => {
+    results = await runWithConcurrency(tasks, concurrency, async (task) => {
       // 分配唯一的端口偏移
       const portOffset = portOffsetLock.current++;
 
@@ -280,15 +272,6 @@ export async function runEval(
       }
 
       const result = await runTaskWithPortOffset(task, config, portOffset);
-
-      // 更新统计
-      const taskType = task.type as keyof typeof stats;
-      if (stats[taskType]) {
-        stats[taskType].total++;
-        if (result.passed) {
-          stats[taskType].passed++;
-        }
-      }
 
       // 更新报告
       await reporter.addResult(result);
@@ -311,15 +294,6 @@ export async function runEval(
 
       const result = await runTask(task, config);
       results.push(result);
-
-      // 更新统计
-      const taskType = task.type as keyof typeof stats;
-      if (stats[taskType]) {
-        stats[taskType].total++;
-        if (result.passed) {
-          stats[taskType].passed++;
-        }
-      }
 
       // 更新报告
       await reporter.addResult(result);

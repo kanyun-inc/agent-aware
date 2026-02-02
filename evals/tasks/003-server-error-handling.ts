@@ -14,7 +14,6 @@ export const task: EvalTask = {
   id: '003-server-error-handling',
   name: 'Agent-Aware 服务错误处理测试',
   description: '验证 Server 对异常情况的处理能力',
-  type: 'server',
   graders: [
     {
       type: 'server',

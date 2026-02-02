@@ -14,7 +14,6 @@ export const task: EvalTask = {
   id: '006-error-fix',
   name: 'Agent-Aware 错误修复',
   description: '验证检测到问题后的修复能力和修复效果',
-  type: 'e2e',
   graders: [
     {
       type: 'server',

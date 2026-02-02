@@ -13,7 +13,6 @@ export const task: EvalTask = {
   id: '001-sdk-init-report',
   name: 'SDK 安装初始化及上报数据',
   description: '验证 SDK 在 vibe coding 项目中的安装、初始化和数据上报功能',
-  type: 'sdk',
   graders: [
     {
       type: 'build',

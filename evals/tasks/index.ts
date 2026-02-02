@@ -71,12 +71,3 @@ export function getTaskIds(): string[] {
 export async function loadTasksByPrefix(prefix: string): Promise<EvalTask[]> {
   return allTasks.filter((t) => t.id === prefix || t.id.startsWith(prefix));
 }
-
-/**
- * 根据类型过滤任务
- */
-export async function loadTasksByType(
-  type: 'sdk' | 'server' | 'e2e'
-): Promise<EvalTask[]> {
-  return allTasks.filter((t) => t.type === type);
-}

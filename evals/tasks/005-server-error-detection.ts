@@ -14,7 +14,6 @@ export const task: EvalTask = {
   id: '005-server-error-detection',
   name: 'Agent-Aware 错误检测响应',
   description: '验证 Server 对 Runtime Error 的检测和告警能力',
-  type: 'server',
   graders: [
     {
       type: 'server',

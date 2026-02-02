@@ -8,11 +8,6 @@
 // ==================== 任务定义 ====================
 
 /**
- * 任务类型
- */
-export type TaskType = 'sdk' | 'server' | 'e2e';
-
-/**
  * 评估任务定义
  */
 export interface EvalTask {
@@ -22,8 +17,6 @@ export interface EvalTask {
   name: string;
   /** 任务描述 */
   description: string;
-  /** 任务类型 */
-  type: TaskType;
   /** 评分器配置列表 */
   graders: GraderConfig[];
   /** 任务超时时间（毫秒），默认 300000 */
@@ -236,8 +229,5 @@ export interface EvalReport {
   summary: {
     totalTasks: number;
     passedTasks: number;
-    sdkTasks: { total: number; passed: number };
-    serverTasks: { total: number; passed: number };
-    e2eTasks: { total: number; passed: number };
   };
 }
