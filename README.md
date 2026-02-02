@@ -18,37 +18,47 @@ After installation, your AI Agent will automatically:
 
 1. **Start Server** — Run the behavior collection service in the background
 2. **Init SDK** — Add one line of code to generated web projects
-3. **Query Behaviors** — Fetch user behavior data via HTTP API
-4. **Optimize Code** — Improve UI/UX based on real user actions
+3. **Monitor & Alert** — Real-time monitoring with automatic issue detection
+4. **Auto-Fix** — Analyze and fix issues based on user behavior signals
+5. **Query & Optimize** — Fetch behavior data and improve UI/UX
 
 Just talk to your AI and let it build web apps. It now has eyes.
 
 ## How It Works
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│  Your Web App               Agent-aware Server           │
-│  ┌────────────────┐        ┌────────────────┐           │
-│  │ SDK tracks     │──HTTP─▶│ Stores behavior│           │
-│  │ user behavior  │  POST  │ data           │           │
-│  └────────────────┘        └───────┬────────┘           │
-│                                    │ HTTP GET           │
-│                                    ▼                    │
-│                           ┌────────────────┐           │
-│                           │  AI Agent      │           │
-│                           │  queries &     │           │
-│                           │  optimizes     │           │
-│                           └────────────────┘           │
-└──────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│  Your Web App                      Agent-aware Server               │
+│  ┌────────────────┐               ┌────────────────┐               │
+│  │ SDK tracks     │──HTTP────────▶│ Stores behavior│               │
+│  │ user behavior  │    POST       │ Detects issues │               │
+│  └────────────────┘               └───────┬────────┘               │
+│                                           │                        │
+│                          ┌────────────────┼────────────────┐       │
+│                          │ Write alerts   │ HTTP GET       │       │
+│                          ▼                ▼                │       │
+│  ┌──────────────────────────┐    ┌────────────────┐       │       │
+│  │ .agent-aware/alert/      │    │ Behavior/Error │       │       │
+│  │ - error.json             │    │ API            │       │       │
+│  │ - behavior.json          │    └───────┬────────┘       │       │
+│  └──────────┬───────────────┘            │                │       │
+│             │ Monitor script polls       │ Query details  │       │
+│             ▼                            ▼                │       │
+│  ┌─────────────────────────────────────────────────┐      │       │
+│  │  AI Agent                                       │      │       │
+│  │  1. Monitor alerts → 2. Query details → 3. Fix  │      │       │
+│  └─────────────────────────────────────────────────┘      │       │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ## What Your Agent Can See
 
-| Behavior | Insight |
-|----------|---------|
-| **Click** | What users interact with |
+| Signal | Insight |
+|--------|---------|
+| **Runtime Error** | JavaScript errors (highest priority) |
 | **Rage Click** | Rapid repeated clicks — user frustration |
 | **Dead Click** | Click with no response — possible bug |
+| **Click** | What users interact with |
 | **Scroll** | How deep users browse |
 | **Hover** | Where users hesitate |
 | **Edit** | User modifications to AI-generated content |
@@ -80,15 +90,21 @@ See `.cursor/skills/agent-aware-e2e-test/SKILL.md` for details.
 
 ```
 agent-aware/
-├── skill/           # AI Agent usage guide
-│   ├── SKILL.md     # Complete usage guide (basic + advanced)
-│   ├── README.md    # Skill documentation
-│   └── scripts/     # Monitoring scripts
+├── skill/                    # AI Agent usage guide
+│   ├── SKILL.md              # Complete usage guide (basic + advanced)
+│   ├── references/           # Reference documentation
+│   │   ├── api.md            # Full API reference
+│   │   └── troubleshooting.md
+│   └── scripts/              # Monitoring scripts
+│       └── monitor.sh        # Auto-monitoring script
+├── .cursor/skills/           # Cursor IDE skills
+│   ├── agent-aware-e2e-test/ # E2E testing skill
+│   └── vercel-react-best-practices/
 ├── packages/
-│   ├── sdk/         # Browser SDK (behavior tracking)
-│   └── server/      # HTTP Server (storage + query)
-├── specs/           # Behavior specs
-└── examples/        # Examples
+│   ├── sdk/                  # Browser SDK (behavior tracking)
+│   └── server/               # HTTP Server (storage + query)
+├── specs/                    # Behavior specs
+└── examples/                 # E2E test generated projects
 ```
 
 ## License
