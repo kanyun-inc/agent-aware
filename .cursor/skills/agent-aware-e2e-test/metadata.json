@@ -1,0 +1,23 @@
+{
+  "name": "agent-aware-e2e-test",
+  "version": "2.0.0",
+  "description": "E2E testing workflow where Agent randomly generates a buggy React app, then autonomously detects and fixes issues. No templates - pure creativity and analysis.",
+  "author": "agent-aware",
+  "triggers": [
+    "e2e test",
+    "test agent-aware",
+    "测试 agent-aware",
+    "generate buggy app",
+    "生成测试项目",
+    "demonstrate agent-aware",
+    "演示检测修复"
+  ],
+  "tags": [
+    "testing",
+    "e2e",
+    "react",
+    "agent-aware",
+    "auto-fix",
+    "random-generation"
+  ]
+}

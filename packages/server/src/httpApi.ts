@@ -83,8 +83,8 @@ export function createHttpApi(
     return c.json(behaviors)
   })
 
-  // GET /summary - 获取行为摘要
-  app.get('/summary', async (c) => {
+  // GET /behaviors/summary - 获取行为摘要
+  app.get('/behaviors/summary', async (c) => {
     const summary = await store.getSummary()
     return c.json(summary)
   })

@@ -103,7 +103,7 @@ console.log(`Server running on http://localhost:${PORT}`)
 - **POST /behaviors** - Receive behavior data (SDK reports)
 - **GET /behaviors** - Query behavior data
   - Parameters: `types` (optional), `limit` (optional)
-- **GET /summary** - Get behavior summary
+- **GET /behaviors/summary** - Get behavior summary
 - **GET /hotspots** - Get interaction hotspots
   - Parameters: `limit` (optional)
 - **DELETE /behaviors** - Clear behavior data

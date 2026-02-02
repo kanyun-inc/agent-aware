@@ -1,23 +1,17 @@
 ---
 name: agent-aware
-description: Monitor user behavior and errors in web applications, automatically analyze and fix issues. Includes basic API usage and advanced auto-fix monitoring workflow. Use when generating or modifying web applications.
+description: Real-time web application monitoring and auto-remediation. Detects user frustration signals (rage clicks, dead clicks) and runtime errors, then guides fixes. Use proactively after generating or modifying web application code, or when debugging UX issues.
 ---
 
-# Agent-aware Usage Guide
+# Agent-aware Skill
 
-This guide helps you perceive user behavior in web applications, including basic API usage and advanced auto-monitoring and fixing features.
+Enables AI agents to perceive and respond to user behavior in web applications.
 
----
-
-# Prerequisites
-
-Before use, ensure the following are installed in the **user's project** (as dev dependencies):
+## Prerequisites
 
 ```bash
 npm install --save-dev @reskill/agent-aware-server @reskill/agent-aware
 ```
-
-Verification: `npm list @reskill/agent-aware-server @reskill/agent-aware`
 
 ---
 
@@ -29,91 +23,83 @@ Verification: `npm list @reskill/agent-aware-server @reskill/agent-aware`
 1. Start Server → 2. Initialize SDK → 3. User Testing → 4. Query API → 5. Optimize Code
 ```
 
-## Step 1: Start Server
+### Step 1: Start the Server
 
 ```bash
 npx agent-aware-server start
-curl http://localhost:4100/health  # Verify
 ```
 
-## Step 2: Initialize SDK
+### Step 2: Initialize the SDK
 
-In the user's project entry file:
+Add to the project's entry file (`main.tsx` / `main.ts` / `app/layout.tsx`):
 
 ```tsx
 import { initAgentAware } from '@reskill/agent-aware'
 initAgentAware()
 ```
 
-**Location**: React/Vite: `main.tsx` | Vue: `main.ts` | Next.js: `app/layout.tsx` (requires `useEffect`)
-
-## Step 3: Query User Behavior
+### Step 3: Query and Interpret
 
 ```bash
-curl http://localhost:4100/summary                                    # Frustration index
+curl http://localhost:4100/behaviors/summary                          # Frustration index
 curl "http://localhost:4100/behaviors?types=rage_click,dead_click"   # Problem behaviors
-curl http://localhost:4100/errors                                     # Errors
+curl http://localhost:4100/errors                                     # Runtime errors
 ```
 
-## Step 4: Interpret Data and Optimize
+| Signal | Remediation |
+|--------|-------------|
+| `rage_click` | Add loading state / disable button during async operations |
+| `dead_click` | Verify event handler binding |
+| `runtime` error | Analyze stack trace and fix root cause |
 
-| Signal | Fix Approach |
-|--------|--------------|
-| `rage_click` | Add loading state |
-| `dead_click` | Check event binding |
-| `runtime` error | Check stack trace |
+> **Full API reference**: See [references/api.md](references/api.md)
 
 ---
 
-# Part 2: Advanced Feature - Active Monitoring and Fixing
+# Part 2: Autonomous Monitoring and Auto-Fix
 
-## When to Use
+Activate **automatically** after completing web application code generation. **Do not wait for user bug reports.**
 
-**Automatically enable** after completing web application code generation or modifying critical interaction logic. **Don't wait for users to report bugs!**
-
-## Phase 1: Preparation (Execute immediately after code generation)
+## Phase 1: Preparation
 
 ```bash
-curl -s http://localhost:4100/health || echo "Please run: npx agent-aware-server start"
+curl -s http://localhost:4100/health || echo "Run: npx agent-aware-server start"
 curl -X DELETE http://localhost:4100/behaviors
 curl -X DELETE http://localhost:4100/errors
-rm -f .agent-aware/alert/error.json .agent-aware/alert/behavior.json
+rm -f .agent-aware/alert/*.json
 ```
 
 ## Phase 2: Start Monitoring
 
-Tell the user:
-
-```
-✅ Code generated! I'll monitor for 2 minutes. Please test the page. Issues will be fixed immediately.
-```
-
-Execute the monitoring script:
+Inform the user: "Code generation complete. Monitoring for 2 minutes — please test the page."
 
 ```bash
 bash scripts/monitor.sh 120 5
-# Parameters: [monitoring seconds] [check interval seconds] [project root (optional)]
+# Parameters: [duration_seconds] [check_interval_seconds] [project_root (optional)]
 ```
 
 **Script behavior**:
-- Listens for `.agent-aware/alert/error.json` and `.agent-aware/alert/behavior.json`
-- Prioritizes error.json (Critical)
-- When file found → outputs content and `exit 1`
-- Timeout with no issues → `exit 0`
+- Monitors `.agent-aware/alert/error.json` and `.agent-aware/alert/behavior.json`
+- Prioritizes `error.json` (critical severity)
+- On file detection → outputs contents and exits with code `1`
+- On timeout without issues → exits with code `0`
 
-## Phase 3: Handle Issues (when script exit 1)
+## Phase 3: Issue Handling (Exit Code 1)
 
 ```bash
+# Runtime error detected
 if [ -f ".agent-aware/alert/error.json" ]; then
-  cat .agent-aware/alert/error.json | jq '.'
-  curl -s "http://localhost:4100/errors?limit=5"
-  # After analysis and fix:
+  cat .agent-aware/alert/error.json
+  curl -s "http://localhost:4100/errors?limit=10"
+  # After fix:
   rm -f .agent-aware/alert/error.json
   curl -X DELETE http://localhost:4100/errors
+
+# Behavior issue detected
 elif [ -f ".agent-aware/alert/behavior.json" ]; then
-  cat .agent-aware/alert/behavior.json | jq '.'
-  curl -s "http://localhost:4100/behaviors?types=rage_click,dead_click&limit=5"
-  # After analysis and fix:
+  cat .agent-aware/alert/behavior.json
+  curl -s "http://localhost:4100/behaviors?types=rage_click,dead_click&limit=10"
+  # After fix:
   rm -f .agent-aware/alert/behavior.json
   curl -X DELETE http://localhost:4100/behaviors
 fi
@@ -122,193 +108,66 @@ fi
 ## Phase 4: Final Analysis
 
 ```bash
-SUMMARY=$(curl -s http://localhost:4100/summary)
-ERROR_SUMMARY=$(curl -s "http://localhost:4100/errors/summary")
+curl -s http://localhost:4100/behaviors/summary
+curl -s http://localhost:4100/errors/summary
 ```
 
-Generate report:
-
+Report format:
 ```
 📊 Monitoring Report
 ✅ Frustration Index: [frustrationScore]/100
-🚨 Error Statistics: [totalErrors] errors
-Overall Assessment: [Good/Needs Optimization/Has Issues]
+🚨 Error Count: [totalErrors]
+Assessment: [Healthy / Needs Optimization / Issues Detected]
 ```
 
 ---
 
-# Data Interpretation
-
-| Type | Signal | Action |
-|------|--------|--------|
-| **Error** | `runtime` | Fix immediately (check stack) |
-| | `unhandled_rejection` | Fix Promise error |
-| **Behavior** | `rage_click` | Add loading state |
-| | `dead_click` | Check event binding |
-| **Frustration** | 61+ | Needs fixing |
-| | 41-60 | Recommended optimization |
-| | 0-40 | No action needed |
-
----
-
-# Architecture
-
-## Directory Structure
-
-```
-user-project/.agent-aware/
-├── alert/                 # Alert directory (for Agent monitoring)
-│   ├── error.json         # Error alerts (max 100 historical)
-│   └── behavior.json      # Behavior alerts (max 100 historical)
-└── detail/                # Detailed data (for HTTP API queries)
-    ├── errors.json        # Detailed error data (max 1000)
-    └── behaviors.json     # Detailed behavior data (max 1000)
-```
-
-## Alert File Format
-
-```json
-{
-  "version": "1.0",
-  "alerts": [
-    { "timestamp": "...", "severity": "critical", "type": "error", "summary": "...", "details": {...} }
-  ]
-}
-```
-
-## Workflow
-
-```
-Server detects → Writes to alert/ files → monitor.sh discovers → Agent handles
-```
-
----
-
-# User Communication Templates
-
-**Starting monitoring**:
-```
-✅ Code generated! I'll monitor for 2 minutes. Please test the page. Issues will be fixed immediately.
-```
-
-**Issue found**:
-```
-⚠️ Issue found and fixed:
-**Issue**: Submit button not responding to clicks
-**Cause**: Missing loading state
-**Fix**: Added loading and disable logic
-Please refresh the page to continue testing.
-```
-
-**Monitoring complete**:
-```
-📊 Monitoring complete!
-✅ Status: Good (Frustration index 15/100)
-Would you like me to apply optimizations?
-```
-
----
-
-# Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| Server not running | `npx agent-aware-server start` |
-| SDK not initialized | Check if entry file has `initAgentAware()` |
-| No data | Ensure page was tested in browser |
-
----
-
-# Advanced: Proactive Check at Conversation Start
+# Proactive Check on Conversation Start
 
 ```bash
 if [ -f ".agent-aware/alert/error.json" ]; then
-  echo "🚨 Runtime error detected. Would you like to fix it first?"
+  echo "🚨 Runtime error detected. Address this first?"
   cat .agent-aware/alert/error.json | jq '.alerts[-1].summary'
 elif [ -f ".agent-aware/alert/behavior.json" ]; then
-  echo "⚠️ User behavior issue detected. Would you like to fix it first?"
+  echo "⚠️ User behavior issue detected. Address this first?"
   cat .agent-aware/alert/behavior.json | jq '.alerts[-1].summary'
 fi
 ```
 
 ---
 
-# Best Practices
+# Exit and Cleanup
 
-1. **Start Server first**: `npx agent-aware-server start`
-2. **Initialize SDK early**: Call `initAgentAware()` at app entry
-3. **Clear old data**: Use `DELETE /behaviors` and `DELETE /errors` before monitoring
-4. **Prioritize errors**: error > behavior
-5. **Limit monitoring duration**: No more than 2 minutes
+Execute when user indicates testing is complete.
 
----
-
-# Exit Conditions and Cleanup
-
-## Keywords that Trigger Exit
-
-When user says any of the following, perform cleanup:
-- "Testing complete", "That's good", "Done", "No issues"
-- "No auto-changes needed", "Don't need monitoring anymore"
-- User makes a new request
-
-## Cleanup Steps [REQUIRED]
-
-**1. Remove SDK initialization code from entry file**:
-
-Remove from entry file (`main.tsx`, `main.ts`, `app/layout.tsx`, etc.):
+**1. Remove SDK initialization** from entry file:
 
 ```tsx
-// Remove these two lines
+// Remove these lines
 import { initAgentAware } from '@reskill/agent-aware'
 initAgentAware()
 ```
 
-**2. Stop Server**:
+**2. Stop the Server**:
 
 ```bash
-# Find and stop agent-aware-server process
 pkill -f "agent-aware-server" || true
-# Or manually press Ctrl+C in the terminal running the Server
 ```
 
-**3. Clean up alert files (optional)**:
+**3. Clean up files** (optional):
 
 ```bash
-rm -rf .agent-aware/alert/
-```
-
-**Cleanup complete message**:
-```
-✅ Monitoring ended. Cleaned up:
-- Removed SDK initialization code from entry file
-- Stopped Server service
-Project code restored to normal state.
+rm -rf .agent-aware
 ```
 
 ---
 
-# FAQ
+# Best Practices
 
-**Q: How to determine project root directory?**
-A: The directory containing `package.json`. The monitoring script will look for `.agent-aware/alert/` in that directory.
+1. **Start Server First**: Always run server before testing
+2. **Initialize SDK Early**: Call `initAgentAware()` at application entry point
+3. **Clear Stale Data**: Use DELETE endpoints before monitoring sessions
+4. **Prioritize Errors**: Address `error.json` before `behavior.json`
+5. **Limit Monitoring Duration**: Keep sessions under 2 minutes
 
-**Q: What if both detection files exist?**
-A: Prioritize reporting `error.json` (runtime errors are more severe).
-
-**Q: How to configure Server output location?**
-```bash
-USER_PROJECT_ROOT=/path/to/project npx agent-aware-server start
-# Or
-npx agent-aware-server start --project-root /path/to/project
-```
-
----
-
-# Summary
-
-**Basic Mode**: Query behavior data → Identify frustration signals → Optimize code
-
-**Advanced Mode**: Monitor immediately after code generation → Proactively discover issues → Auto-fix and provide feedback
-
-User experience: No need to manually report bugs, faster fixes, smoother development.
+> **Troubleshooting**: See [references/troubleshooting.md](references/troubleshooting.md)

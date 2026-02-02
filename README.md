@@ -18,41 +18,50 @@ After installation, your AI Agent will automatically:
 
 1. **Start Server** — Run the behavior collection service in the background
 2. **Init SDK** — Add one line of code to generated web projects
-3. **Query Behaviors** — Fetch user behavior data via HTTP API
-4. **Optimize Code** — Improve UI/UX based on real user actions
+3. **Monitor & Alert** — Real-time monitoring with automatic issue detection
+4. **Auto-Fix** — Analyze and fix issues based on user behavior signals
+5. **Query & Optimize** — Fetch behavior data and improve UI/UX
 
 Just talk to your AI and let it build web apps. It now has eyes.
 
 ## How It Works
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│  Your Web App               Agent-aware Server           │
-│  ┌────────────────┐        ┌────────────────┐           │
-│  │ SDK tracks     │──HTTP─▶│ Stores behavior│           │
-│  │ user behavior  │  POST  │ data           │           │
-│  └────────────────┘        └───────┬────────┘           │
-│                                    │ HTTP GET           │
-│                                    ▼                    │
-│                           ┌────────────────┐           │
-│                           │  AI Agent      │           │
-│                           │  queries &     │           │
-│                           │  optimizes     │           │
-│                           └────────────────┘           │
-└──────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│  Your Web App                      Agent-aware Server               │
+│  ┌────────────────┐               ┌────────────────┐               │
+│  │ SDK tracks     │──HTTP────────▶│ Stores behavior│               │
+│  │ user behavior  │    POST       │ Detects issues │               │
+│  └────────────────┘               └───────┬────────┘               │
+│                                           │                        │
+│                          ┌────────────────┼────────────────┐       │
+│                          │ Write alerts   │ HTTP GET       │       │
+│                          ▼                ▼                │       │
+│  ┌──────────────────────────┐    ┌────────────────┐       │       │
+│  │ .agent-aware/alert/      │    │ Behavior/Error │       │       │
+│  │ - error.json             │    │ API            │       │       │
+│  │ - behavior.json          │    └───────┬────────┘       │       │
+│  └──────────┬───────────────┘            │                │       │
+│             │ Monitor script polls       │ Query details  │       │
+│             ▼                            ▼                │       │
+│  ┌─────────────────────────────────────────────────┐      │       │
+│  │  AI Agent                                       │      │       │
+│  │  1. Monitor alerts → 2. Query details → 3. Fix  │      │       │
+│  └─────────────────────────────────────────────────┘      │       │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ## What Your Agent Can See
 
-| Behavior | Insight |
-|----------|---------|
-| **Click** | What users interact with |
+| Signal | Insight |
+|--------|---------|
+| **Runtime Error** | JavaScript errors (highest priority) |
 | **Rage Click** | Rapid repeated clicks — user frustration |
 | **Dead Click** | Click with no response — possible bug |
+| **Click** | What users interact with |
 | **Scroll** | How deep users browse |
 | **Hover** | Where users hesitate |
 | **Edit** | User modifications to AI-generated content |
-| **Error** | Runtime errors and unhandled exceptions |
 
 ## Development
 
@@ -60,22 +69,42 @@ Just talk to your AI and let it build web apps. It now has eyes.
 git clone https://github.com/kanyun-inc/agent-aware.git
 cd agent-aware
 pnpm install
-pnpm dev:server  # Start server
-pnpm test        # Run tests
+pnpm build       # Build packages
+pnpm dev:server  # Start server in dev mode
+pnpm test        # Run unit tests
 ```
+
+## E2E Testing
+
+In Cursor, tell the Agent **"test agent-aware"** and it will automatically:
+
+1. **Generate test app** — Create a random React + Vite project with 2-3 intentional bugs (dead_click, rage_click, runtime_error)
+2. **Start monitoring** — Run Server and example app
+3. **Detect issues** — Automatically detect problems when user tests the page
+4. **Fix issues** — Analyze root cause and auto-fix the code
+5. **Generate report** — Output test report to verify fixes
+
+See `.cursor/skills/agent-aware-e2e-test/SKILL.md` for details.
 
 ## Project Structure
 
 ```
 agent-aware/
-├── skill/           # Skill definition (for AI Agents)
-│   ├── SKILL.md     # Complete usage guide (read by AI Agent)
-│   └── scripts/     # Monitoring scripts
+├── skill/                    # Skill definition (for AI Agents)
+│   ├── SKILL.md              # Complete usage guide (read by AI Agent)
+│   ├── references/           # Reference documentation
+│   │   ├── api.md            # Full API reference
+│   │   └── troubleshooting.md
+│   └── scripts/              # Monitoring scripts
+│       └── monitor.sh        # Auto-monitoring script
+├── .cursor/skills/           # Cursor IDE skills
+│   ├── agent-aware-e2e-test/ # E2E testing skill
+│   └── vercel-react-best-practices/
 ├── packages/
-│   ├── sdk/         # Browser SDK (behavior tracking)
-│   └── server/      # HTTP Server (storage + query)
-├── specs/           # Behavior specs
-└── examples/        # Examples
+│   ├── sdk/                  # Browser SDK (behavior tracking)
+│   └── server/               # HTTP Server (storage + query)
+├── specs/                    # Behavior specs
+└── examples/                 # E2E test generated projects
 ```
 
 ## License
