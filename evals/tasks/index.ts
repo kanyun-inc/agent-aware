@@ -13,6 +13,9 @@
 
 import type { EvalTask } from '../harness/types';
 
+// 重新导出常量
+export { DEFAULT_TEST_APP_PATH } from './constants';
+
 // 导入所有任务
 import { task as task001 } from './001-sdk-init-report';
 import { task as task002 } from './002-server-data-collection';

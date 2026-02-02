@@ -8,6 +8,7 @@
  */
 
 import type { EvalTask } from '../harness/types';
+import { DEFAULT_TEST_APP_PATH } from './constants';
 
 export const task: EvalTask = {
   id: '001-sdk-init-report',
@@ -32,7 +33,7 @@ export const task: EvalTask = {
   ],
   config: {
     needsServer: true,
-    testAppPath: 'examples/test-app-1738394400',
+    testAppPath: DEFAULT_TEST_APP_PATH,
     expectedBehaviors: ['click', 'scroll'],
   },
   timeout: 180000, // 3 分钟

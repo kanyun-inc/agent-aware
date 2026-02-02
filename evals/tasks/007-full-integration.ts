@@ -13,6 +13,7 @@
  */
 
 import type { EvalTask } from '../harness/types';
+import { DEFAULT_TEST_APP_PATH } from './constants';
 
 export const task: EvalTask = {
   id: '007-full-integration',
@@ -60,7 +61,7 @@ export const task: EvalTask = {
   config: {
     needsServer: true,
     needsDevServer: true,
-    testAppPath: 'examples/test-app-1738394400',
+    testAppPath: DEFAULT_TEST_APP_PATH,
     expectedBehaviors: ['click', 'scroll', 'hover'],
     expectedIssues: [
       { type: 'dead_click', selector: 'button' },

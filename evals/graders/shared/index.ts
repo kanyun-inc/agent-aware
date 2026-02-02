@@ -100,6 +100,16 @@ export async function httpRequest(
       body: responseBody,
       duration: Date.now() - startTime,
     };
+  } catch (error) {
+    // 处理 AbortError（超时）
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`HTTP request timeout after ${timeout}ms: ${method} ${url}`);
+    }
+    // 处理其他网络错误
+    if (error instanceof TypeError) {
+      throw new Error(`HTTP request failed (network error): ${method} ${url} - ${error.message}`);
+    }
+    throw error;
   } finally {
     clearTimeout(timeoutId);
   }

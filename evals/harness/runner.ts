@@ -104,16 +104,30 @@ async function runTrial(
     const serverGraderResult = graderResults.find((r) => r.type === 'server');
     const sdkGraderResult = graderResults.find((r) => r.type === 'sdk');
 
+    // 辅助函数：安全提取数值
+    const getNumber = (
+      details: Record<string, unknown> | undefined,
+      key: string
+    ): number => {
+      const value = details?.[key];
+      return typeof value === 'number' ? value : 0;
+    };
+
+    // 辅助函数：安全提取检测到的问题
+    const getDetectedIssues = (
+      details: Record<string, unknown> | undefined
+    ): OutcomeState['detectedIssues'] => {
+      const issues = details?.detectedIssues;
+      return Array.isArray(issues) ? issues : [];
+    };
+
     const outcome: OutcomeState = {
       files,
       buildSuccess: buildGraderResult?.passed ?? true,
       serverRunning: task.config?.needsServer ?? false,
-      capturedBehaviors:
-        (sdkGraderResult?.details.capturedCount as number) ?? 0,
-      capturedErrors:
-        (sdkGraderResult?.details.errorCount as number) ?? 0,
-      detectedIssues:
-        (serverGraderResult?.details.detectedIssues as OutcomeState['detectedIssues']) ?? [],
+      capturedBehaviors: getNumber(sdkGraderResult?.details, 'capturedCount'),
+      capturedErrors: getNumber(sdkGraderResult?.details, 'errorCount'),
+      detectedIssues: getDetectedIssues(serverGraderResult?.details),
     };
 
     // 5. 计算总体结果
@@ -194,12 +208,17 @@ async function runWithConcurrency<T, R>(
   fn: (item: T, index: number) => Promise<R>
 ): Promise<R[]> {
   const results: R[] = new Array(items.length);
-  let currentIndex = 0;
+
+  // 使用队列模式避免竞态条件
+  const queue = items.map((item, index) => ({ item, index }));
 
   async function worker(): Promise<void> {
-    while (currentIndex < items.length) {
-      const index = currentIndex++;
-      results[index] = await fn(items[index], index);
+    while (true) {
+      // 同步获取下一个任务（在 await 之前完成）
+      const task = queue.shift();
+      if (!task) break;
+
+      results[task.index] = await fn(task.item, task.index);
     }
   }
 

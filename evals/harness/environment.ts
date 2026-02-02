@@ -3,13 +3,10 @@
  * 每次试验在独立的临时目录中运行
  */
 
-import { exec, spawn, type ChildProcess } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 import path from 'node:path';
-import { promisify } from 'node:util';
 import fs from 'node:fs';
 import type { EvalConfig } from '../config';
-
-const execAsync = promisify(exec);
 
 export interface IsolatedEnvironment {
   /** 临时工作区目录 */
@@ -28,12 +25,8 @@ export interface IsolatedEnvironment {
   cleanup: () => Promise<void>;
 }
 
-/**
- * 等待指定时间
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+// 导入共享的 sleep 函数
+import { sleep } from '../graders/shared';
 
 /**
  * 检查服务是否已启动（通过 HTTP 健康检查）
@@ -341,32 +334,4 @@ export async function listProjectFiles(dir: string): Promise<string[]> {
 
   walk(dir);
   return files;
-}
-
-/**
- * 执行 Shell 命令
- */
-export async function execCommand(
-  command: string,
-  options: {
-    cwd?: string;
-    timeout?: number;
-  } = {}
-): Promise<{ stdout: string; stderr: string }> {
-  const { cwd, timeout = 60000 } = options;
-
-  try {
-    const result = await execAsync(command, {
-      cwd,
-      timeout,
-      shell: process.platform === 'win32' ? 'cmd.exe' : '/bin/sh',
-    });
-    return result;
-  } catch (error) {
-    if (error instanceof Error && 'stdout' in error && 'stderr' in error) {
-      const execError = error as Error & { stdout: string; stderr: string };
-      return { stdout: execError.stdout || '', stderr: execError.stderr || '' };
-    }
-    throw error;
-  }
 }

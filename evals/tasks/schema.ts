@@ -54,6 +54,7 @@ export const serverGraderConfigSchema = z.object({
     dataStorage: z.boolean().optional(),
     issueDetection: z.boolean().optional(),
     expectedIssues: z.array(expectedIssueSchema).optional(),
+    strictIssueValidation: z.boolean().optional(),
   }),
 });
 

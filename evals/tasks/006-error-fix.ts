@@ -9,6 +9,7 @@
  */
 
 import type { EvalTask } from '../harness/types';
+import { DEFAULT_TEST_APP_PATH } from './constants';
 
 export const task: EvalTask = {
   id: '006-error-fix',
@@ -40,7 +41,7 @@ export const task: EvalTask = {
   ],
   config: {
     needsServer: true,
-    testAppPath: 'examples/test-app-1738394400',
+    testAppPath: DEFAULT_TEST_APP_PATH,
     expectedIssues: [
       { type: 'dead_click', selector: 'button' },
       { type: 'rage_click', selector: 'button' },

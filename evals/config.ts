@@ -2,6 +2,8 @@
  * 评估系统配置
  */
 
+import os from 'node:os';
+
 export interface EvalConfig {
   /** 任务超时时间（毫秒） */
   timeout: number;
@@ -60,7 +62,7 @@ export function parseArgs(
       if (nextArg && !nextArg.startsWith('-')) {
         result.concurrency = Number.parseInt(args[++i], 10);
       } else {
-        result.concurrency = Math.min(4, require('os').cpus().length);
+        result.concurrency = Math.min(4, os.cpus().length);
       }
     } else if (arg === '--concurrency' && args[i + 1]) {
       result.concurrency = Number.parseInt(args[++i], 10);
