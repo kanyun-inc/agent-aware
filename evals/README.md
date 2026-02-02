@@ -2,6 +2,19 @@
 
 基于 [Anthropic 官方文章](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) 的最佳实践设计的评估系统，用于验证 Agent-aware 在 vibe coding 项目中的集成效果。
 
+## CI 集成
+
+评估系统已集成到 GitHub Actions，每次 PR 和推送到 main 分支时自动运行：
+
+- **自动评估**: PR 创建/更新时自动运行评估
+- **结果展示**: 评估报告显示在 PR 评论和 Actions Summary 中
+- **结果归档**: 评估结果作为 Artifact 保存 30 天
+
+查看评估结果：
+1. PR 页面的评论区
+2. Actions 运行页面的 Summary
+3. Artifacts 下载完整报告
+
 ## 快速开始
 
 ```bash
