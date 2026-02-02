@@ -1,12 +1,12 @@
 # Agent-aware
 
-**Bridging the Gap Between Agents and User Actions.**
+**An AI Agent Skill for Perceiving User Behavior**
 
 [简体中文](./README.zh-CN.md)
 
 ---
 
-Agent-aware enables your AI Agent (Cursor, Claude Code, etc.) to **see** what users do in web apps—clicks, scrolls, frustration, edits, and more.
+Agent-aware is a **skill** that gives your AI Agent (Cursor, Claude Code, etc.) the ability to **see** what users do in web apps—clicks, scrolls, frustration, edits, and more.
 
 ## Install
 
@@ -66,7 +66,7 @@ Just talk to your AI and let it build web apps. It now has eyes.
 ## Development
 
 ```bash
-git clone https://github.com/anthropics/agent-aware.git
+git clone https://github.com/kanyun-inc/agent-aware.git
 cd agent-aware
 pnpm install
 pnpm build       # Build packages
@@ -90,8 +90,8 @@ See `.cursor/skills/agent-aware-e2e-test/SKILL.md` for details.
 
 ```
 agent-aware/
-├── skill/                    # AI Agent usage guide
-│   ├── SKILL.md              # Complete usage guide (basic + advanced)
+├── skill/                    # Skill definition (for AI Agents)
+│   ├── SKILL.md              # Complete usage guide (read by AI Agent)
 │   ├── references/           # Reference documentation
 │   │   ├── api.md            # Full API reference
 │   │   └── troubleshooting.md

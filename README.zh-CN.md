@@ -1,12 +1,12 @@
 # Agent-aware
 
-**让 AI Agent 感知用户行为**
+**感知用户行为的 Skill**
 
 [English](./README.md)
 
 ---
 
-Agent-aware 让你的 AI Agent（Cursor、Claude Code 等）能够"看到"用户在 Web 应用中的操作——点击、滚动、卡顿、修改等。
+Agent-aware 是一个 **Skill**，让你的 AI Agent（Cursor、Claude Code 等）能够"看到"用户在 Web 应用中的操作——点击、滚动、卡顿、修改等。
 
 ## 安装
 
@@ -66,7 +66,7 @@ npx reskill@latest install agent-aware
 ## 开发
 
 ```bash
-git clone https://github.com/anthropics/agent-aware.git
+git clone https://github.com/kanyun-inc/agent-aware.git
 cd agent-aware
 pnpm install
 pnpm build       # 构建 packages
@@ -90,8 +90,8 @@ pnpm test        # 运行单元测试
 
 ```
 agent-aware/
-├── skill/                    # AI Agent 使用指南
-│   ├── SKILL.md              # 完整使用指南（基础 + 高级）
+├── skill/                    # Skill 定义（供 AI Agent 使用）
+│   ├── SKILL.md              # 完整使用指南（AI Agent 阅读）
 │   ├── references/           # 参考文档
 │   │   ├── api.md            # 完整 API 参考
 │   │   └── troubleshooting.md
