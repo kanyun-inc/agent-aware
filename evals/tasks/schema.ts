@@ -67,11 +67,30 @@ export const e2eGraderConfigSchema = z.object({
   }),
 });
 
+export const llmGraderConfigSchema = z.object({
+  type: z.literal('llm'),
+  checks: z.object({
+    dimensions: z
+      .array(
+        z.enum([
+          'skill_compliance',
+          'code_placement',
+          'diagnosis_quality',
+          'cleanup_quality',
+        ])
+      )
+      .optional(),
+    provider: z.enum(['openai', 'anthropic']).optional(),
+    model: z.string().optional(),
+  }),
+});
+
 export const graderConfigSchema = z.union([
   buildGraderConfigSchema,
   sdkGraderConfigSchema,
   serverGraderConfigSchema,
   e2eGraderConfigSchema,
+  llmGraderConfigSchema,
 ]);
 
 /**

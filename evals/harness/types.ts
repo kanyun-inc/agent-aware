@@ -65,7 +65,29 @@ export type GraderConfig =
   | SDKGraderConfig
   | ServerGraderConfig
   | E2EGraderConfig
-  | BuildGraderConfig;
+  | BuildGraderConfig
+  | LLMGraderConfig;
+
+/**
+ * LLM 评分器配置
+ * 使用 LLM 作为 Judge 评估 Agent 执行质量
+ */
+export interface LLMGraderConfig {
+  type: 'llm';
+  checks: {
+    /** 要评估的维度列表 */
+    dimensions?: (
+      | 'skill_compliance'
+      | 'code_placement'
+      | 'diagnosis_quality'
+      | 'cleanup_quality'
+    )[];
+    /** LLM 提供商 */
+    provider?: 'openai' | 'anthropic';
+    /** 模型名称 */
+    model?: string;
+  };
+}
 
 export interface SDKGraderConfig {
   type: 'sdk';
@@ -132,7 +154,7 @@ export interface BuildGraderConfig {
 
 export interface GraderResult {
   /** 评分器类型 */
-  type: 'sdk' | 'server' | 'e2e' | 'build';
+  type: 'sdk' | 'server' | 'e2e' | 'build' | 'llm';
   /** 是否通过 */
   passed: boolean;
   /** 分数（0-1） */

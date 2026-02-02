@@ -40,6 +40,13 @@ jobs:
 
       - name: Run Evaluations
         id: eval
+        env:
+          # LLM Grader 配置（可选，未配置时跳过 LLM 评估）
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # 或使用 OpenAI
+          # OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_PROVIDER: anthropic
+          LLM_MODEL: claude-sonnet-4-20250514
         run: |
           pnpm eval --trials 5 --parallel 2>&1 | tee eval-output.txt
           exit_code=${PIPESTATUS[0]}

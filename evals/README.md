@@ -55,6 +55,43 @@ pnpm eval --trials 5 -p       # 5 次评估 + 并行加速
 | `005-server-error-detection` | Agent-Aware 错误检测响应 | Server | 验证 Runtime Error 的检测和告警 |
 | `006-error-fix` | Agent-Aware 错误修复 | E2E | 验证检测到问题后的修复能力和修复效果 |
 | `007-full-integration` | 完整 Agent-Aware 集成测试 | E2E | 验证 SDK + Server 在真实项目中的完整集成流程 |
+| `008-skill-compliance` | Skill 遵循度评估 | LLM | 使用 LLM Judge 评估 Agent 执行 Skill 的质量 |
+
+## LLM Grader (LLM as Judge)
+
+评估系统支持使用 LLM 作为评判者，评估 Agent 执行 Skill 的质量。这是对程序化检查的补充，可以评估一些"软"指标。
+
+### 评估维度
+
+| 维度 | 说明 |
+|------|------|
+| `skill_compliance` | Skill 遵循度 - Agent 是否按照 Skill 文档的步骤执行 |
+| `code_placement` | 代码放置正确性 - initAgentAware() 是否放在正确的入口文件 |
+| `diagnosis_quality` | 问题诊断能力 - 检测到问题后是否正确分析和修复 |
+| `cleanup_quality` | 清理完整性 - 任务结束时是否正确清理 SDK 代码 |
+
+### 配置 API Key
+
+LLM Grader 需要配置 API Key：
+
+```bash
+# 使用 OpenAI (默认)
+export OPENAI_API_KEY=sk-xxx
+
+# 或使用 Anthropic
+export ANTHROPIC_API_KEY=sk-ant-xxx
+export LLM_PROVIDER=anthropic
+export LLM_MODEL=claude-3-sonnet-20240229
+```
+
+### 运行 LLM 评估
+
+```bash
+# 运行 Skill 遵循度评估
+pnpm eval --task 008
+
+# 如果未配置 API Key，LLM Grader 会跳过（不影响其他评估）
+```
 
 ## 命令行参数
 

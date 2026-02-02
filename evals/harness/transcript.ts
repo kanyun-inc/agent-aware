@@ -153,6 +153,70 @@ export class TranscriptRecorder {
   }
 
   /**
+   * 导出为人类可读的文本格式
+   * 用于 LLM Judge 评估
+   */
+  toText(): string {
+    const lines: string[] = [];
+
+    for (const entry of this.entries) {
+      const time = `[${(entry.timestamp / 1000).toFixed(1)}s]`;
+      const content = entry.content as Record<string, unknown>;
+
+      switch (entry.type) {
+        case 'setup':
+          lines.push(`${time} SETUP: ${content.message}`);
+          break;
+        case 'server_start':
+          lines.push(`${time} SERVER START: port ${content.port}`);
+          break;
+        case 'server_stop':
+          lines.push(`${time} SERVER STOP`);
+          break;
+        case 'api_call':
+          lines.push(`${time} API CALL: ${content.method} ${content.url}`);
+          break;
+        case 'api_response':
+          lines.push(
+            `${time} API RESPONSE: status ${content.status} (${content.duration}ms)`
+          );
+          break;
+        case 'behavior_captured':
+          lines.push(`${time} BEHAVIOR: captured ${content.count} behaviors`);
+          break;
+        case 'error_captured':
+          lines.push(`${time} ERROR: ${content.message}`);
+          break;
+        case 'issue_detected':
+          lines.push(
+            `${time} ISSUE: ${content.type} - ${content.message || ''}`
+          );
+          break;
+        case 'grader_start':
+          lines.push(`${time} GRADER START: ${content.graderType}`);
+          break;
+        case 'grader_finish':
+          lines.push(
+            `${time} GRADER FINISH: ${content.graderType} - ${content.passed ? 'PASS' : 'FAIL'} (score: ${content.score})`
+          );
+          break;
+        case 'custom_event':
+          lines.push(
+            `${time} EVENT [${content.eventType}]: ${JSON.stringify(content)}`
+          );
+          break;
+        case 'error':
+          lines.push(`${time} SYSTEM ERROR: ${content.message}`);
+          break;
+        default:
+          lines.push(`${time} ${entry.type}: ${JSON.stringify(content)}`);
+      }
+    }
+
+    return lines.join('\n');
+  }
+
+  /**
    * 重置记录器
    */
   reset(): void {

@@ -9,6 +9,7 @@ import { gradeBuild } from '../graders/build-grader';
 import { gradeE2E } from '../graders/e2e-grader';
 import { gradeSDK } from '../graders/sdk-grader';
 import { gradeServer } from '../graders/server-grader';
+import { gradeLLM, isLLMGraderAvailable } from '../graders/llm';
 import {
   createIsolatedEnvironment,
   listProjectFiles,
@@ -84,6 +85,19 @@ async function runTrial(
           break;
         case 'e2e':
           result = await gradeE2E(env, graderConfig, recorder);
+          break;
+        case 'llm':
+          // LLM Grader 需要 API Key
+          if (!isLLMGraderAvailable()) {
+            result = {
+              type: 'llm',
+              passed: true, // 跳过时默认通过
+              score: 1,
+              details: { skipped: true, reason: 'No API key configured' },
+            };
+          } else {
+            result = await gradeLLM(env, graderConfig, recorder, task.description);
+          }
           break;
         default:
           throw new Error(
