@@ -41,12 +41,16 @@ jobs:
       - name: Run Evaluations
         id: eval
         env:
-          # LLM Grader 配置（可选，未配置时跳过 LLM 评估）
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          # 或使用 OpenAI
-          # OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          LLM_PROVIDER: anthropic
-          LLM_MODEL: claude-sonnet-4-20250514
+          # LLM Grader 配置 - AWS Bedrock（推荐）
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-west-2
+          CLAUDE_CODE_USE_BEDROCK: '1'
+          LLM_MODEL: ${{ secrets.LLM_MODEL || 'anthropic.claude-3-5-sonnet-20241022-v2:0' }}
+          # 或使用 Anthropic 直接 API
+          # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # LLM_PROVIDER: anthropic
+          # LLM_MODEL: claude-sonnet-4-20250514
         run: |
           pnpm eval --trials 5 --parallel 2>&1 | tee eval-output.txt
           exit_code=${PIPESTATUS[0]}
