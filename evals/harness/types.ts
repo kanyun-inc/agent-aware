@@ -94,6 +94,13 @@ export interface ServerGraderConfig {
     issueDetection?: boolean;
     /** 预期检测的问题 */
     expectedIssues?: ExpectedIssue[];
+    /**
+     * 是否严格验证 expectedIssues
+     * - true: 必须检测到所有预期问题才通过
+     * - false: 仅验证检测能力，不要求必须检测到预期问题（自动化测试适用）
+     * 默认: false
+     */
+    strictIssueValidation?: boolean;
   };
 }
 
@@ -149,6 +156,7 @@ export type TranscriptEntryType =
   | 'api_response'
   | 'grader_start'
   | 'grader_finish'
+  | 'custom_event'
   | 'error';
 
 export interface TranscriptEntry {

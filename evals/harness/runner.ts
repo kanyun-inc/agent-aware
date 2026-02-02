@@ -260,31 +260,37 @@ export async function runEval(
       console.log(`\n🚀 [Eval] 并行执行 ${tasks.length} 个任务 (并发数: ${concurrency})`);
     }
 
-    // 用于追踪端口分配
-    const portOffsetLock = { current: 0 };
+    // 预分配端口偏移，避免竞态条件
+    const tasksWithPorts = tasks.map((task, index) => ({
+      task,
+      portOffset: index,
+    }));
 
-    results = await runWithConcurrency(tasks, concurrency, async (task) => {
-      // 分配唯一的端口偏移
-      const portOffset = portOffsetLock.current++;
+    results = await runWithConcurrency(
+      tasksWithPorts,
+      concurrency,
+      async ({ task, portOffset }) => {
+        if (config.verbose) {
+          console.log(
+            `\n📋 [Eval] Starting task: ${task.id} (port offset: ${portOffset})`
+          );
+        }
 
-      if (config.verbose) {
-        console.log(`\n📋 [Eval] Starting task: ${task.id} (port offset: ${portOffset})`);
+        const result = await runTaskWithPortOffset(task, config, portOffset);
+
+        // 更新报告
+        await reporter.addResult(result);
+
+        if (config.verbose) {
+          const status = result.passed ? '✅' : '❌';
+          console.log(
+            `   ${status} ${task.id}: ${(result.duration / 1000).toFixed(1)}s`
+          );
+        }
+
+        return result;
       }
-
-      const result = await runTaskWithPortOffset(task, config, portOffset);
-
-      // 更新报告
-      await reporter.addResult(result);
-
-      if (config.verbose) {
-        const status = result.passed ? '✅' : '❌';
-        console.log(
-          `   ${status} ${task.id}: ${(result.duration / 1000).toFixed(1)}s`
-        );
-      }
-
-      return result;
-    });
+    );
   } else {
     // 串行执行任务（避免端口冲突）
     for (const task of tasks) {

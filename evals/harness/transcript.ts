@@ -73,6 +73,13 @@ export class TranscriptRecorder {
   }
 
   /**
+   * 记录通用事件
+   */
+  recordEvent(eventType: string, data: Record<string, unknown>): void {
+    this.record('custom_event', { eventType, ...data });
+  }
+
+  /**
    * 记录 API 调用
    */
   recordApiCall(method: string, url: string, body?: unknown): void {

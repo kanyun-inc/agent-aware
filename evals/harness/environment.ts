@@ -55,7 +55,7 @@ async function isServerReady(port: number): Promise<boolean> {
 }
 
 /**
- * 等待服务启动
+ * 等待服务启动（通过 /health 端点检查）
  */
 async function waitForServer(
   port: number,
@@ -68,6 +68,40 @@ async function waitForServer(
       return true;
     }
     await sleep(300);
+  }
+  return false;
+}
+
+/**
+ * 检查端口是否可连接（用于开发服务器等无 /health 端点的服务）
+ */
+async function isPortReady(port: number): Promise<boolean> {
+  try {
+    const response = await fetch(`http://localhost:${port}/`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(2000),
+    });
+    // 任何响应都表示端口已就绪（包括 404）
+    return response.status < 500;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 等待端口就绪（用于开发服务器等无 /health 端点的服务）
+ */
+async function waitForPort(
+  port: number,
+  timeout: number = 60000
+): Promise<boolean> {
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeout) {
+    const ready = await isPortReady(port);
+    if (ready) {
+      return true;
+    }
+    await sleep(500);
   }
   return false;
 }

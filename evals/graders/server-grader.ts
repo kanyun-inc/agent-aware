@@ -200,11 +200,14 @@ async function checkDataStorage(
 /**
  * 检查问题检测
  * 使用 /behaviors/summary 和 /errors/summary 端点
+ *
+ * @param strictValidation - 是否严格验证 expectedIssues
  */
 async function checkIssueDetection(
   env: IsolatedEnvironment,
   expectedIssues: ExpectedIssue[],
-  recorder: TranscriptRecorder
+  recorder: TranscriptRecorder,
+  strictValidation: boolean = false
 ): Promise<{
   success: boolean;
   detectedIssues: DetectedIssue[];
@@ -289,8 +292,31 @@ async function checkIssueDetection(
       };
     }
 
-    // 验证是否检测到预期的问题（可选验证）
-    // 由于这是自动化测试，可能没有实际用户操作，所以放宽验证
+    // 验证是否检测到预期的问题
+    const detectedTypes = new Set(detectedIssues.map((i) => i.type));
+    const missingIssues = expectedIssues.filter(
+      (expected) => !detectedTypes.has(expected.type)
+    );
+
+    if (missingIssues.length > 0) {
+      // 记录未检测到的预期问题
+      recorder.recordEvent('issue_detection_mismatch', {
+        expected: expectedIssues.map((i) => i.type),
+        detected: Array.from(detectedTypes),
+        missing: missingIssues.map((i) => i.type),
+        strictValidation,
+      });
+
+      // 只有在严格验证模式下才标记为失败
+      if (strictValidation) {
+        return {
+          success: false,
+          detectedIssues,
+          error: `未检测到预期问题: ${missingIssues.map((i) => i.type).join(', ')}`,
+        };
+      }
+    }
+
     return {
       success: true,
       detectedIssues,
@@ -390,8 +416,9 @@ export async function gradeServer(
     if (checks.issueDetection) {
       const issueResult = await checkIssueDetection(
         env,
-        checks.expectedIssues,
-        recorder
+        checks.expectedIssues ?? [],
+        recorder,
+        checks.strictIssueValidation ?? false
       );
       details.issueDetection = issueResult.success;
       details.detectedIssues = issueResult.detectedIssues;

@@ -169,7 +169,13 @@ async function checkFullFlow(
 
 /**
  * 检查问题修复效果
- * 通过比较修复前后的挫折指数来评估
+ *
+ * 验证逻辑：
+ * 1. 读取 .agent-aware/alert/ 目录中的历史告警文件获取 beforeIndex
+ * 2. 获取当前挫折指数作为 afterIndex
+ * 3. 比较改善幅度是否满足 expectedDelta
+ *
+ * 如果没有历史告警文件，则检查当前挫折指数是否低于阈值
  */
 async function checkIssueFix(
   env: IsolatedEnvironment,
@@ -182,33 +188,87 @@ async function checkIssueFix(
   actualDelta: number;
   error?: string;
 }> {
-  try {
-    // 获取当前挫折指数作为 "修复后"
-    const afterResult = await checkFullFlow(env, recorder);
+  const fs = await import('node:fs');
+  const path = await import('node:path');
 
-    if (!afterResult.success) {
+  try {
+    // 获取当前挫折指数
+    const currentResult = await checkFullFlow(env, recorder);
+
+    if (!currentResult.success) {
       return {
         success: false,
         beforeIndex: 0,
         afterIndex: 0,
         actualDelta: 0,
-        error: afterResult.error,
+        error: currentResult.error,
       };
     }
 
-    // 在实际场景中，beforeIndex 应该从修复前保存的数据获取
-    // 这里假设 afterResult.frustrationIndex 就是当前状态
-    const afterIndex = afterResult.frustrationIndex;
+    const afterIndex = currentResult.frustrationIndex;
 
-    // 对于评估，我们检查挫折指数是否足够低
-    // expectedDelta 为负数表示期望挫折指数降低
-    const success = afterIndex <= Math.abs(expectedDelta);
+    // 尝试从历史告警文件获取 beforeIndex
+    let beforeIndex = 0;
+    const alertDir = path.join(env.testAppPath, '.agent-aware', 'alert');
+
+    if (fs.existsSync(alertDir)) {
+      const alertFiles = fs.readdirSync(alertDir).filter((f: string) => f.endsWith('.json'));
+      if (alertFiles.length > 0) {
+        // 按时间排序，取最旧的作为基准
+        alertFiles.sort();
+        const oldestAlert = path.join(alertDir, alertFiles[0]);
+        try {
+          const alertContent = JSON.parse(fs.readFileSync(oldestAlert, 'utf-8'));
+          beforeIndex = alertContent.frustrationIndex ?? alertContent.score ?? 0;
+          recorder.recordEvent('baseline_loaded', {
+            file: alertFiles[0],
+            beforeIndex,
+          });
+        } catch {
+          // 解析失败，使用默认值
+        }
+      }
+    }
+
+    // 如果没有历史基准，使用配置的 expectedDelta 作为阈值判断
+    if (beforeIndex === 0) {
+      // 没有基准数据时，检查当前指数是否低于阈值
+      // expectedDelta 为负数表示期望降低，取绝对值作为最大可接受值
+      const threshold = Math.abs(expectedDelta);
+      const success = afterIndex <= threshold;
+
+      recorder.recordEvent('fix_check_no_baseline', {
+        afterIndex,
+        threshold,
+        success,
+      });
+
+      return {
+        success,
+        beforeIndex: threshold, // 使用阈值作为假设的初始值
+        afterIndex,
+        actualDelta: threshold - afterIndex,
+      };
+    }
+
+    // 有基准数据，计算实际改善幅度
+    const actualDelta = beforeIndex - afterIndex;
+    // expectedDelta 为负数（期望降低），actualDelta 应该为正数（实际降低）
+    const success = actualDelta >= Math.abs(expectedDelta);
+
+    recorder.recordEvent('fix_check_with_baseline', {
+      beforeIndex,
+      afterIndex,
+      actualDelta,
+      expectedDelta,
+      success,
+    });
 
     return {
       success,
-      beforeIndex: afterIndex - expectedDelta, // 假设值
+      beforeIndex,
       afterIndex,
-      actualDelta: expectedDelta,
+      actualDelta,
     };
   } catch (error) {
     return {
