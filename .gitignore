@@ -10,6 +10,10 @@ coverage/
 test-data/
 test-api-data/
 
+# Evals
+evals/results/*
+!evals/results/.gitkeep
+
 # Data storage
 data/
 .agent-aware/
