@@ -103,7 +103,7 @@ console.log(`Server running on http://localhost:${PORT}`)
 - **POST /behaviors** - 接收行为数据（SDK 上报）
 - **GET /behaviors** - 查询行为数据
   - 参数：`types`（可选）、`limit`（可选）
-- **GET /summary** - 获取行为摘要
+- **GET /behaviors/summary** - 获取行为摘要
 - **GET /hotspots** - 获取交互热点
   - 参数：`limit`（可选）
 - **DELETE /behaviors** - 清空行为数据

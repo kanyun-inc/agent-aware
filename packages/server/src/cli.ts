@@ -59,7 +59,7 @@ function start() {
 ║   Endpoints:                                              ║
 ║     POST   /behaviors       - SDK 上报行为数据            ║
 ║     GET    /behaviors       - 查询行为列表                ║
-║     GET    /summary         - 获取行为摘要                ║
+║     GET    /behaviors/summary - 获取行为摘要              ║
 ║     GET    /hotspots        - 获取交互热点                ║
 ║     DELETE /behaviors       - 清空行为数据                ║
 ║     POST   /errors          - SDK 上报错误数据            ║

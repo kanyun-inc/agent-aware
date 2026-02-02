@@ -159,14 +159,14 @@ describe('HTTP API', () => {
     })
   })
 
-  describe('GET /summary', () => {
+  describe('GET /behaviors/summary', () => {
     it('应该返回行为摘要', async () => {
       await store.addBatch([
         createTestBehavior({ type: 'click' }),
         createTestBehavior({ type: 'rage_click' }),
       ])
 
-      const res = await app.request('/summary')
+      const res = await app.request('/behaviors/summary')
 
       expect(res.status).toBe(200)
       const json = await res.json()
@@ -233,7 +233,7 @@ describe('HTTP API', () => {
       const endpoints = [
         '/behaviors',
         '/health',
-        '/summary',
+        '/behaviors/summary',
         '/hotspots',
       ]
 

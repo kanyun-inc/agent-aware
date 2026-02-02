@@ -41,7 +41,7 @@ initAgentAware()
 ### Step 3: Query and Interpret
 
 ```bash
-curl http://localhost:4100/summary                                    # Frustration index
+curl http://localhost:4100/behaviors/summary                          # Frustration index
 curl "http://localhost:4100/behaviors?types=rage_click,dead_click"   # Problem behaviors
 curl http://localhost:4100/errors                                     # Runtime errors
 ```
@@ -108,7 +108,7 @@ fi
 ## Phase 4: Final Analysis
 
 ```bash
-curl -s http://localhost:4100/summary
+curl -s http://localhost:4100/behaviors/summary
 curl -s http://localhost:4100/errors/summary
 ```
 

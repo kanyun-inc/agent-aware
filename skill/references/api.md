@@ -12,7 +12,7 @@ curl http://localhost:4100/health
 
 ```bash
 # Get frustration summary
-curl http://localhost:4100/summary
+curl http://localhost:4100/behaviors/summary
 
 # Query specific behavior types
 curl "http://localhost:4100/behaviors?types=rage_click,dead_click&limit=10"
