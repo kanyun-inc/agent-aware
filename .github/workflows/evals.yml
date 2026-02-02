@@ -124,8 +124,10 @@ jobs:
               
               MAIN_PASSED=$(jq '.summary.passedTasks' "$MAIN_JSON")
               MAIN_TOTAL=$(jq '.summary.totalTasks' "$MAIN_JSON")
+              MAIN_TRIALS=$(jq '.trialsStats.totalTrials // 1' "$MAIN_JSON")
               CURRENT_PASSED=$(jq '.summary.passedTasks' "$CURRENT_JSON")
               CURRENT_TOTAL=$(jq '.summary.totalTasks' "$CURRENT_JSON")
+              CURRENT_TRIALS=$(jq '.trialsStats.totalTrials // 1' "$CURRENT_JSON")
               
               MAIN_RATE=$((MAIN_PASSED * 100 / MAIN_TOTAL))
               CURRENT_RATE=$((CURRENT_PASSED * 100 / CURRENT_TOTAL))
@@ -141,6 +143,7 @@ jobs:
               
               echo "| 指标 | main | 当前分支 | 变化 |" >> $GITHUB_STEP_SUMMARY
               echo "|------|------|----------|------|" >> $GITHUB_STEP_SUMMARY
+              echo "| 评估次数 | ${MAIN_TRIALS} 次 | ${CURRENT_TRIALS} 次 | |" >> $GITHUB_STEP_SUMMARY
               echo "| 通过率 | ${MAIN_RATE}% | ${CURRENT_RATE}% | ${DIFF_STR} |" >> $GITHUB_STEP_SUMMARY
               echo "| 通过数 | ${MAIN_PASSED}/${MAIN_TOTAL} | ${CURRENT_PASSED}/${CURRENT_TOTAL} | |" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
@@ -202,23 +205,49 @@ jobs:
               const diffStr = diff > 0 ? `+${diff}%` : diff < 0 ? `${diff}%` : '±0%';
               const diffIcon = diff > 0 ? '📈' : diff < 0 ? '📉' : '➡️';
               
+              // 获取评估次数
+              const mainTrials = mainReport.trialsStats?.totalTrials || 1;
+              const currentTrials = currentReport.trialsStats?.totalTrials || 1;
+              
               body += `### 📊 对比 main 分支\n\n`;
               body += `| 指标 | main | 当前分支 | 变化 |\n`;
               body += `|------|------|----------|------|\n`;
+              body += `| 评估次数 | ${mainTrials} 次 | ${currentTrials} 次 | |\n`;
               body += `| 通过率 | ${mainRate}% | ${currentRate}% | ${diffIcon} ${diffStr} |\n`;
               body += `| 通过数 | ${main.passedTasks}/${main.totalTasks} | ${current.passedTasks}/${current.totalTasks} | |\n\n`;
               
-              // 任务级别对比
+              // 任务级别对比（包含多次评估统计）
               body += `<details>\n<summary>📋 任务详情对比</summary>\n\n`;
               body += `| 任务 | main | 当前 |\n`;
               body += `|------|------|------|\n`;
               
               const mainTasks = {};
+              const mainTaskStats = mainReport.trialsStats?.taskStats || {};
               mainReport.results.forEach(r => { mainTasks[r.taskId] = r.passed; });
               
+              const currentTaskStats = currentReport.trialsStats?.taskStats || {};
+              
               currentReport.results.forEach(r => {
-                const mainStatus = mainTasks[r.taskId] !== undefined ? (mainTasks[r.taskId] ? '✅' : '❌') : '-';
-                const currentStatus = r.passed ? '✅' : '❌';
+                // main 分支状态
+                let mainStatus = '-';
+                if (mainTasks[r.taskId] !== undefined) {
+                  const mainStat = mainTaskStats[r.taskId];
+                  if (mainStat && mainTrials > 1) {
+                    mainStatus = `${mainStat.passCount}/${mainTrials} ${mainTasks[r.taskId] ? '✅' : '❌'}`;
+                  } else {
+                    mainStatus = mainTasks[r.taskId] ? '✅' : '❌';
+                  }
+                }
+                
+                // 当前分支状态
+                let currentStatus;
+                const currentStat = currentTaskStats[r.taskId];
+                if (currentStat && currentTrials > 1) {
+                  currentStatus = `${currentStat.passCount}/${currentTrials} ${r.passed ? '✅' : '❌'}`;
+                } else {
+                  currentStatus = r.passed ? '✅' : '❌';
+                }
+                
                 body += `| ${r.taskId} | ${mainStatus} | ${currentStatus} |\n`;
               });
               body += `\n</details>\n\n`;
