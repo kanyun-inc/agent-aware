@@ -74,7 +74,7 @@ async function checkFullFlow(
 
     // 3. 获取行为摘要
     const summaryResponse = await httpRequest(
-      `http://localhost:${env.serverPort}/summary`,
+      `http://localhost:${env.serverPort}/behaviors/summary`,
       { method: 'GET', timeout: 5000 }
     );
 

@@ -62,7 +62,7 @@ async function checkAPIResponse(
   const endpoints = [
     { method: 'GET', path: '/health' },
     { method: 'GET', path: '/behaviors' },
-    { method: 'GET', path: '/summary' },
+    { method: 'GET', path: '/behaviors/summary' },
     { method: 'GET', path: '/hotspots' },
     { method: 'GET', path: '/errors' },
     { method: 'GET', path: '/errors/summary' },
@@ -199,7 +199,7 @@ async function checkDataStorage(
 
 /**
  * 检查问题检测
- * 使用 /summary 和 /errors/summary 端点
+ * 使用 /behaviors/summary 和 /errors/summary 端点
  */
 async function checkIssueDetection(
   env: IsolatedEnvironment,
@@ -213,7 +213,7 @@ async function checkIssueDetection(
   try {
     // 获取行为摘要（包含 dead clicks 和 rage clicks 检测）
     const summaryResponse = await httpRequest(
-      `http://localhost:${env.serverPort}/summary`,
+      `http://localhost:${env.serverPort}/behaviors/summary`,
       { method: 'GET', timeout: 5000 }
     );
 
