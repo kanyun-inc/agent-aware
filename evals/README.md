@@ -38,6 +38,10 @@ pnpm eval --parallel          # 自动检测并发数
 pnpm eval --parallel 4        # 指定 4 个任务并行
 pnpm eval --concurrency 3     # 等价于 --parallel 3
 pnpm eval -p --verbose        # 并行 + 详细日志
+
+# 多次评估（统计稳定性）
+pnpm eval --trials 3          # 运行 3 次完整评估
+pnpm eval --trials 5 -p       # 5 次评估 + 并行加速
 ```
 
 ## 评估任务列表
@@ -64,6 +68,7 @@ pnpm eval -p --verbose        # 并行 + 详细日志
 | `--verbose` | `-v` | 启用详细日志 |
 | `--parallel [n]` | `-p` | 并行执行（可选指定并发数，默认自动检测） |
 | `--concurrency <n>` | | 指定并发任务数 |
+| `--trials <n>` | | 运行多次评估（用于统计稳定性） |
 
 ## 目录结构
 

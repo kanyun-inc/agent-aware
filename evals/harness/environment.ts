@@ -99,6 +99,45 @@ function copyDirSync(src: string, dest: string): void {
 }
 
 /**
+ * 更新测试应用中 SDK 的 endpoint 配置
+ * 确保 SDK 上报数据到正确的 Server 端口
+ */
+function updateSdkEndpoint(testAppPath: string, serverPort: number): void {
+  const mainJsxPath = path.join(testAppPath, 'src/main.jsx');
+
+  if (!fs.existsSync(mainJsxPath)) {
+    return; // 如果文件不存在，跳过
+  }
+
+  let content = fs.readFileSync(mainJsxPath, 'utf-8');
+  const endpoint = `http://localhost:${serverPort}/behaviors`;
+
+  // 替换 initAgentAware 配置，添加动态 endpoint
+  // SDK 会从 endpoint 自动推导 errorEndpoint
+  if (content.includes('endpoint:')) {
+    // 替换现有的 endpoint
+    content = content.replace(
+      /endpoint:\s*['"][^'"]+['"]/g,
+      `endpoint: '${endpoint}'`
+    );
+  } else if (content.includes('initAgentAware({')) {
+    // 在现有配置中添加 endpoint
+    content = content.replace(
+      /initAgentAware\(\{/g,
+      `initAgentAware({ endpoint: '${endpoint}',`
+    );
+  } else if (content.includes('initAgentAware()')) {
+    // 添加完整配置
+    content = content.replace(
+      /initAgentAware\(\)/g,
+      `initAgentAware({ endpoint: '${endpoint}' })`
+    );
+  }
+
+  fs.writeFileSync(mainJsxPath, content, 'utf-8');
+}
+
+/**
  * 创建隔离环境
  */
 export async function createIsolatedEnvironment(
@@ -128,6 +167,9 @@ export async function createIsolatedEnvironment(
     const srcPath = path.resolve(options.testAppPath);
     testAppPath = path.join(workspacePath, 'app');
     copyDirSync(srcPath, testAppPath);
+
+    // 更新 SDK endpoint 以匹配当前 Server 端口
+    updateSdkEndpoint(testAppPath, config.serverPort);
   }
 
   const env: IsolatedEnvironment = {

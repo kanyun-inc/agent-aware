@@ -17,6 +17,8 @@ export interface EvalConfig {
   verbose: boolean;
   /** 并行执行的任务数量（1 表示串行） */
   concurrency: number;
+  /** 评估运行次数（用于统计稳定性） */
+  trials: number;
 }
 
 export const defaultConfig: EvalConfig = {
@@ -27,6 +29,7 @@ export const defaultConfig: EvalConfig = {
   devServerPort: 5173,
   verbose: false,
   concurrency: 1, // 默认串行执行
+  trials: 1, // 默认运行 1 次
 };
 
 /**
@@ -61,6 +64,8 @@ export function parseArgs(
       }
     } else if (arg === '--concurrency' && args[i + 1]) {
       result.concurrency = Number.parseInt(args[++i], 10);
+    } else if (arg === '--trials' && args[i + 1]) {
+      result.trials = Number.parseInt(args[++i], 10);
     }
   }
 

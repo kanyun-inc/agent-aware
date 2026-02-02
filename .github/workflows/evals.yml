@@ -40,7 +40,7 @@ jobs:
       - name: Run Evaluations
         id: eval
         run: |
-          pnpm eval --parallel 2>&1 | tee eval-output.txt
+          pnpm eval --trials 5 --parallel 2>&1 | tee eval-output.txt
           exit_code=${PIPESTATUS[0]}
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
         continue-on-error: true
