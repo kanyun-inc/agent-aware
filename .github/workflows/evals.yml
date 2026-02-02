@@ -1,0 +1,323 @@
+name: Evals
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch: # 支持手动触发
+
+jobs:
+  eval:
+    name: Run Evaluations
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read # 读取 workflow runs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Run Evaluations
+        id: eval
+        run: |
+          pnpm eval --trials 5 --parallel 2>&1 | tee eval-output.txt
+          exit_code=${PIPESTATUS[0]}
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Download main branch eval results
+        if: github.event_name == 'pull_request'
+        id: download-main
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // 查找 main 分支最新成功的 workflow run
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'evals.yml',
+              branch: 'main',
+              status: 'success',
+              per_page: 1,
+            });
+            
+            if (runs.data.workflow_runs.length === 0) {
+              console.log('No successful main branch runs found');
+              core.setOutput('found', 'false');
+              return;
+            }
+            
+            const runId = runs.data.workflow_runs[0].id;
+            console.log(`Found main branch run: ${runId}`);
+            
+            // 获取 artifacts
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+            });
+            
+            const evalArtifact = artifacts.data.artifacts.find(a => a.name === 'eval-results');
+            if (!evalArtifact) {
+              console.log('No eval-results artifact found');
+              core.setOutput('found', 'false');
+              return;
+            }
+            
+            // 下载 artifact
+            const download = await github.rest.actions.downloadArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: evalArtifact.id,
+              archive_format: 'zip',
+            });
+            
+            fs.writeFileSync('main-eval-results.zip', Buffer.from(download.data));
+            core.setOutput('found', 'true');
+            core.setOutput('run_id', runId);
+        continue-on-error: true
+
+      - name: Extract main branch results
+        if: github.event_name == 'pull_request' && steps.download-main.outputs.found == 'true'
+        run: |
+          mkdir -p main-results
+          unzip -o main-eval-results.zip -d main-results || true
+
+      - name: Generate Summary
+        env:
+          MAIN_RESULTS_FOUND: ${{ steps.download-main.outputs.found }}
+        run: |
+          echo "## 📊 Agent-aware 评估报告" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # 如果有 main 分支结果，显示对比
+          if [ "$MAIN_RESULTS_FOUND" = "true" ]; then
+            MAIN_JSON=$(ls -t main-results/*.json 2>/dev/null | head -1)
+            CURRENT_JSON=$(ls -t evals/results/*.json 2>/dev/null | head -1)
+            
+            if [ -f "$MAIN_JSON" ] && [ -f "$CURRENT_JSON" ]; then
+              echo "### 📊 对比 main 分支" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              
+              MAIN_PASSED=$(jq '.summary.passedTasks' "$MAIN_JSON")
+              MAIN_TOTAL=$(jq '.summary.totalTasks' "$MAIN_JSON")
+              MAIN_TRIALS=$(jq '.trialsStats.totalTrials // 1' "$MAIN_JSON")
+              CURRENT_PASSED=$(jq '.summary.passedTasks' "$CURRENT_JSON")
+              CURRENT_TOTAL=$(jq '.summary.totalTasks' "$CURRENT_JSON")
+              CURRENT_TRIALS=$(jq '.trialsStats.totalTrials // 1' "$CURRENT_JSON")
+              
+              MAIN_RATE=$((MAIN_PASSED * 100 / MAIN_TOTAL))
+              CURRENT_RATE=$((CURRENT_PASSED * 100 / CURRENT_TOTAL))
+              DIFF=$((CURRENT_RATE - MAIN_RATE))
+              
+              if [ $DIFF -gt 0 ]; then
+                DIFF_STR="📈 +${DIFF}%"
+              elif [ $DIFF -lt 0 ]; then
+                DIFF_STR="📉 ${DIFF}%"
+              else
+                DIFF_STR="➡️ ±0%"
+              fi
+              
+              echo "| 指标 | main | 当前分支 | 变化 |" >> $GITHUB_STEP_SUMMARY
+              echo "|------|------|----------|------|" >> $GITHUB_STEP_SUMMARY
+              echo "| 评估次数 | ${MAIN_TRIALS} 次 | ${CURRENT_TRIALS} 次 | |" >> $GITHUB_STEP_SUMMARY
+              echo "| 通过率 | ${MAIN_RATE}% | ${CURRENT_RATE}% | ${DIFF_STR} |" >> $GITHUB_STEP_SUMMARY
+              echo "| 通过数 | ${MAIN_PASSED}/${MAIN_TOTAL} | ${CURRENT_PASSED}/${CURRENT_TOTAL} | |" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          
+          # 当前分支详细报告
+          REPORT_FILE=$(ls -t evals/results/*.md 2>/dev/null | head -1)
+          
+          if [ -f "$REPORT_FILE" ]; then
+            echo "### 📝 当前分支详情" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat "$REPORT_FILE" | tail -n +2 >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ 评估报告生成失败，请检查评估日志。" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          MAIN_RESULTS_FOUND: ${{ steps.download-main.outputs.found }}
+          MAIN_RUN_ID: ${{ steps.download-main.outputs.run_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // 解析 JSON 报告获取统计信息
+            function parseReport(dir) {
+              try {
+                const files = fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort().reverse();
+                if (files.length === 0) return null;
+                const content = fs.readFileSync(path.join(dir, files[0]), 'utf8');
+                return JSON.parse(content);
+              } catch (e) {
+                return null;
+              }
+            }
+            
+            // 获取当前分支报告
+            const currentReport = parseReport('evals/results');
+            
+            // 获取 main 分支报告
+            const mainReport = process.env.MAIN_RESULTS_FOUND === 'true' 
+              ? parseReport('main-results') 
+              : null;
+            
+            // 构建评论内容
+            let body = '## 📊 Agent-aware 评估结果\n\n';
+            
+            // 对比表格
+            if (currentReport && mainReport) {
+              const current = currentReport.summary;
+              const main = mainReport.summary;
+              const currentRate = ((current.passedTasks / current.totalTasks) * 100).toFixed(0);
+              const mainRate = ((main.passedTasks / main.totalTasks) * 100).toFixed(0);
+              const diff = currentRate - mainRate;
+              const diffStr = diff > 0 ? `+${diff}%` : diff < 0 ? `${diff}%` : '±0%';
+              const diffIcon = diff > 0 ? '📈' : diff < 0 ? '📉' : '➡️';
+              
+              // 获取评估次数
+              const mainTrials = mainReport.trialsStats?.totalTrials || 1;
+              const currentTrials = currentReport.trialsStats?.totalTrials || 1;
+              
+              body += `### 📊 对比 main 分支\n\n`;
+              body += `| 指标 | main | 当前分支 | 变化 |\n`;
+              body += `|------|------|----------|------|\n`;
+              body += `| 评估次数 | ${mainTrials} 次 | ${currentTrials} 次 | |\n`;
+              body += `| 通过率 | ${mainRate}% | ${currentRate}% | ${diffIcon} ${diffStr} |\n`;
+              body += `| 通过数 | ${main.passedTasks}/${main.totalTasks} | ${current.passedTasks}/${current.totalTasks} | |\n\n`;
+              
+              // 任务级别对比（包含多次评估统计）
+              body += `<details>\n<summary>📋 任务详情对比</summary>\n\n`;
+              body += `| 任务 | main | 当前 |\n`;
+              body += `|------|------|------|\n`;
+              
+              const mainTasks = {};
+              const mainTaskStats = mainReport.trialsStats?.taskStats || {};
+              mainReport.results.forEach(r => { mainTasks[r.taskId] = r.passed; });
+              
+              const currentTaskStats = currentReport.trialsStats?.taskStats || {};
+              
+              currentReport.results.forEach(r => {
+                // main 分支状态
+                let mainStatus = '-';
+                if (mainTasks[r.taskId] !== undefined) {
+                  const mainStat = mainTaskStats[r.taskId];
+                  if (mainStat && mainTrials > 1) {
+                    mainStatus = `${mainStat.passCount}/${mainTrials} ${mainTasks[r.taskId] ? '✅' : '❌'}`;
+                  } else {
+                    mainStatus = mainTasks[r.taskId] ? '✅' : '❌';
+                  }
+                }
+                
+                // 当前分支状态
+                let currentStatus;
+                const currentStat = currentTaskStats[r.taskId];
+                if (currentStat && currentTrials > 1) {
+                  currentStatus = `${currentStat.passCount}/${currentTrials} ${r.passed ? '✅' : '❌'}`;
+                } else {
+                  currentStatus = r.passed ? '✅' : '❌';
+                }
+                
+                body += `| ${r.taskId} | ${mainStatus} | ${currentStatus} |\n`;
+              });
+              body += `\n</details>\n\n`;
+            } else if (currentReport) {
+              body += `> ℹ️ main 分支暂无评估基准数据\n\n`;
+            }
+            
+            // 当前分支详细报告
+            body += `### 📝 当前分支评估报告\n\n`;
+            
+            if (currentReport) {
+              const { summary } = currentReport;
+              body += `- **通过率**: ${((summary.passedTasks / summary.totalTasks) * 100).toFixed(0)}%\n`;
+              body += `- **通过数**: ${summary.passedTasks}/${summary.totalTasks}\n\n`;
+              
+              body += `| 任务 | 耗时 | 状态 |\n`;
+              body += `|------|------|------|\n`;
+              currentReport.results.forEach(r => {
+                const status = r.passed ? '✅' : '❌';
+                const duration = (r.duration / 1000).toFixed(1);
+                body += `| ${r.taskId} | ${duration}s | ${status} |\n`;
+              });
+            } else {
+              body += '⚠️ 评估报告生成失败，请检查 Actions 日志。\n';
+            }
+            
+            body += '\n\n---\n';
+            body += `*Generated by [Agent-aware Evals](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})*`;
+            
+            // 查找并更新或创建评论
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(c => 
+              c.user.type === 'Bot' && 
+              c.body.includes('Agent-aware 评估结果')
+            );
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }
+
+      - name: Upload Eval Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results
+          path: |
+            evals/results/*.json
+            evals/results/*.md
+            evals/results/transcripts/
+          retention-days: 30
+
+      - name: Check Eval Status
+        if: steps.eval.outputs.exit_code != '0'
+        run: |
+          echo "::error::评估未全部通过，请检查报告详情"
+          exit 1
