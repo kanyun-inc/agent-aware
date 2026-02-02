@@ -46,7 +46,7 @@ Server 需要提供 HTTP API：
 Behavior[]
 ```
 
-#### GET /summary
+#### GET /behaviors/summary
 
 获取行为摘要（AI 使用）。
 
@@ -120,7 +120,7 @@ Behavior[]
 - [x] GET /behaviors 返回行为列表
 - [x] GET /behaviors 支持类型过滤
 - [x] GET /behaviors 支持 limit 参数
-- [x] GET /summary 返回正确摘要
+- [x] GET /behaviors/summary 返回正确摘要
 - [x] GET /hotspots 返回热点区域
 - [x] GET /health 返回正确统计
 - [x] DELETE /behaviors 清空数据
@@ -137,3 +137,4 @@ Behavior[]
 | 2026-01-25 | 添加 GET 查询接口 | 支持 AI 查询 |
 | 2026-01-28 | 明确 CORS 配置细节 | 修复跨域问题 Bug |
 | 2026-01-28 | CORS 改用动态 Origin + credentials | 修复 credentials 模式下的 CORS 错误 |
+| 2026-02-02 | /summary 改为 /behaviors/summary | 路径命名一致性（与 /errors/summary 对应） |
