@@ -83,8 +83,8 @@ export interface LLMGraderConfig {
       | 'cleanup_quality'
     )[];
     /** LLM 提供商 */
-    provider?: 'openai' | 'anthropic';
-    /** 模型名称 */
+    provider?: 'openai' | 'anthropic' | 'bedrock';
+    /** 模型名称或 ARN */
     model?: string;
   };
 }

@@ -25,6 +25,7 @@
     "eval:test": "vitest run --config vitest.evals.config.ts"
   },
   "devDependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.980.0",
     "@changesets/cli": "^2.27.0",
     "serve": "^14.2.5",
     "tsx": "^4.7.0",

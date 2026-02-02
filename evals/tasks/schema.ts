@@ -80,7 +80,7 @@ export const llmGraderConfigSchema = z.object({
         ])
       )
       .optional(),
-    provider: z.enum(['openai', 'anthropic']).optional(),
+    provider: z.enum(['openai', 'anthropic', 'bedrock']).optional(),
     model: z.string().optional(),
   }),
 });

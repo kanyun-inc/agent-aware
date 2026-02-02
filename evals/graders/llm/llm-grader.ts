@@ -9,7 +9,12 @@ import path from 'node:path';
 import type { GraderResult } from '../../harness/types';
 import type { TranscriptRecorder } from '../../harness/transcript';
 import type { IsolatedEnvironment } from '../../harness/environment';
-import { type LLMConfig, getLLMConfigFromEnv } from './client';
+import {
+  type LLMConfig,
+  getLLMConfigFromEnv,
+  isLLMAvailable,
+  getLLMUnavailableReason,
+} from './client';
 import {
   type Rubric,
   type JudgeScore,
@@ -217,18 +222,16 @@ export async function gradeLLM(
 }
 
 /**
- * 检查 LLM Grader 是否可用（API Key 是否配置）
+ * 检查 LLM Grader 是否可用
+ * 支持 OpenAI、Anthropic API 和 AWS Bedrock
  */
 export function isLLMGraderAvailable(): boolean {
-  return !!(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY);
+  return isLLMAvailable();
 }
 
 /**
  * 获取 LLM Grader 不可用的原因
  */
 export function getLLMGraderUnavailableReason(): string | null {
-  if (isLLMGraderAvailable()) {
-    return null;
-  }
-  return 'Missing API key. Set OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable.';
+  return getLLMUnavailableReason();
 }
