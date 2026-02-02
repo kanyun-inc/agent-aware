@@ -19,11 +19,12 @@ import { ErrorStore } from './store/errorStore.js'
 import { BehaviorDetector } from './detector/behaviorDetector.js'
 import { AlertDetector } from './detector/alertDetector.js'
 
-const HTTP_PORT = 4100
+const DEFAULT_HTTP_PORT = 4100
 
 function parseArgs() {
   const args = process.argv.slice(2)
   let projectRoot = process.env.USER_PROJECT_ROOT || process.cwd()
+  let port = process.env.PORT ? parseInt(process.env.PORT, 10) : DEFAULT_HTTP_PORT
 
   // 解析 --project-root 参数
   const projectRootIndex = args.indexOf('--project-root')
@@ -31,11 +32,17 @@ function parseArgs() {
     projectRoot = args[projectRootIndex + 1]
   }
 
-  return { projectRoot }
+  // 解析 --port 参数
+  const portIndex = args.indexOf('--port')
+  if (portIndex !== -1 && args[portIndex + 1]) {
+    port = parseInt(args[portIndex + 1], 10)
+  }
+
+  return { projectRoot, port }
 }
 
 function start() {
-  const { projectRoot } = parseArgs()
+  const { projectRoot, port } = parseArgs()
 
   // 所有组件统一使用 projectRoot，输出到 .agent-aware/ 目录
   const store = new BehaviorStore(projectRoot)
@@ -49,7 +56,7 @@ function start() {
 ║                                                           ║
 ║   Agent-aware Server                                      ║
 ║                                                           ║
-║   HTTP API: http://localhost:${HTTP_PORT}                      ║
+║   HTTP API: http://localhost:${String(port).padEnd(5)}                     ║
 ║   Project Root: ${projectRoot.slice(0, 38).padEnd(38)}║
 ║                                                           ║
 ║   Output:                                                 ║
@@ -72,7 +79,7 @@ function start() {
 
   serve({
     fetch: app.fetch,
-    port: HTTP_PORT,
+    port,
   })
 
   console.log('[AgentAware] Server started')

@@ -20,11 +20,16 @@
     "test": "pnpm -r test",
     "test:watch": "pnpm -r test:watch",
     "typecheck": "pnpm -r typecheck",
-    "release": "pnpm publish -r --access public"
+    "release": "pnpm publish -r --access public",
+    "eval": "tsx evals/run.ts",
+    "eval:test": "vitest run --config vitest.evals.config.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
-    "serve": "^14.2.5"
+    "serve": "^14.2.5",
+    "tsx": "^4.7.0",
+    "vitest": "^2.1.0",
+    "zod": "^3.23.0"
   },
   "engines": {
     "node": ">=18.0.0"
