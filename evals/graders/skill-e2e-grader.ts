@@ -347,13 +347,18 @@ async function phase1GenerateApp(
   }
 
   try {
-    // 调用 AI 生成应用
+    // 调用 AI 生成应用（替换提示词中的端口占位符）
+    const promptWithPort = GENERATE_APP_PROMPT.replace(
+      /localhost:4100/g,
+      `localhost:${serverPort}`
+    );
+
     const messages: UIMessage[] = [
       {
         role: 'system',
         content: `你在目录 ${projectPath} 下工作。请创建一个随机主题的测试应用。`,
       },
-      { role: 'user', content: GENERATE_APP_PROMPT },
+      { role: 'user', content: promptWithPort },
     ];
 
     console.log('🤖 [Phase 1] 调用 AI 生成应用...');

@@ -17,6 +17,22 @@ const BUILD_TIMEOUT = 120000; // 2 分钟
 const TYPECHECK_TIMEOUT = 60000; // 1 分钟
 
 /**
+ * 检查构建产物是否存在
+ */
+function checkBuildArtifacts(projectDir: string): {
+  sdkExists: boolean;
+  serverExists: boolean;
+} {
+  const sdkDistPath = path.join(projectDir, 'packages/sdk/dist');
+  const serverDistPath = path.join(projectDir, 'packages/server/dist');
+
+  return {
+    sdkExists: fs.existsSync(sdkDistPath),
+    serverExists: fs.existsSync(serverDistPath),
+  };
+}
+
+/**
  * 执行 pnpm install
  */
 async function runPnpmInstall(projectDir: string): Promise<{
@@ -41,13 +57,24 @@ async function runPnpmInstall(projectDir: string): Promise<{
 }
 
 /**
- * 执行 pnpm build
+ * 执行 pnpm build（如果构建产物已存在则跳过）
  */
 async function runPnpmBuild(projectDir: string): Promise<{
   success: boolean;
   output: string;
   error?: string;
+  skipped?: boolean;
 }> {
+  // 检查构建产物是否已存在，避免并发构建冲突
+  const artifacts = checkBuildArtifacts(projectDir);
+  if (artifacts.sdkExists && artifacts.serverExists) {
+    return {
+      success: true,
+      output: 'Build artifacts already exist, skipping build',
+      skipped: true,
+    };
+  }
+
   const result = await execCommand('pnpm build', {
     cwd: projectDir,
     timeout: BUILD_TIMEOUT,
@@ -85,22 +112,6 @@ async function runTypeCheck(projectDir: string): Promise<{
     success: false,
     output: (result.stdout + result.stderr).slice(-500),
     error: `TypeScript 类型检查失败: ${result.stderr.slice(0, 200)}`,
-  };
-}
-
-/**
- * 检查构建产物是否存在
- */
-function checkBuildArtifacts(projectDir: string): {
-  sdkExists: boolean;
-  serverExists: boolean;
-} {
-  const sdkDistPath = path.join(projectDir, 'packages/sdk/dist');
-  const serverDistPath = path.join(projectDir, 'packages/server/dist');
-
-  return {
-    sdkExists: fs.existsSync(sdkDistPath),
-    serverExists: fs.existsSync(serverDistPath),
   };
 }
 
