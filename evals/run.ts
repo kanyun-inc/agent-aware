@@ -151,6 +151,32 @@ async function main() {
     `   通过: ${report.summary.passedTasks}/${report.summary.totalTasks}`
   );
 
+  // 计算并显示总体得分
+  const allScores: number[] = [];
+  for (const result of aggregatedResults.finalResults) {
+    const trial = result.trial;
+    if (trial?.graderResults) {
+      for (const grader of trial.graderResults) {
+        allScores.push(grader.score);
+      }
+    }
+  }
+  const overallScore = allScores.length > 0
+    ? (allScores.reduce((a, b) => a + b, 0) / allScores.length * 100).toFixed(1)
+    : '0';
+  console.log(`   总体得分: ${overallScore}%`);
+
+  // 显示每个任务的详细得分
+  console.log(`\n📈 [Eval] 任务得分明细:`);
+  for (const result of aggregatedResults.finalResults) {
+    const trial = result.trial;
+    const status = result.passed ? '✅' : '❌';
+    const graderScores = trial?.graderResults?.map(
+      (g: { type: string; score: number }) => `${g.type}: ${(g.score * 100).toFixed(0)}%`
+    ).join(', ') || 'N/A';
+    console.log(`   ${status} ${result.taskId}: ${graderScores}`);
+  }
+
   // 多次评估时显示统计信息
   if (trials > 1 && aggregatedResults.stats) {
     console.log(`\n📈 [Eval] 多次评估统计:`);

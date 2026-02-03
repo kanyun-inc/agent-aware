@@ -132,10 +132,25 @@ jobs:
           echo "## 📊 Agent-aware 评估报告" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
+          # 计算总体得分的函数
+          calc_overall_score() {
+            local json_file=$1
+            jq -r '[.results[].trial.graderResults[]?.score // empty] | if length > 0 then (add / length * 100 | floor) else 0 end' "$json_file" 2>/dev/null || echo "0"
+          }
+          
+          CURRENT_JSON=$(ls -t evals/results/*.json 2>/dev/null | head -1)
+          
+          # 计算当前分支总体得分
+          if [ -f "$CURRENT_JSON" ]; then
+            CURRENT_SCORE=$(calc_overall_score "$CURRENT_JSON")
+            CURRENT_PASSED=$(jq '.summary.passedTasks' "$CURRENT_JSON")
+            CURRENT_TOTAL=$(jq '.summary.totalTasks' "$CURRENT_JSON")
+            CURRENT_TRIALS=$(jq '.trialsStats.totalTrials // 1' "$CURRENT_JSON")
+          fi
+          
           # 如果有 main 分支结果，显示对比
           if [ "$MAIN_RESULTS_FOUND" = "true" ]; then
             MAIN_JSON=$(ls -t main-results/*.json 2>/dev/null | head -1)
-            CURRENT_JSON=$(ls -t evals/results/*.json 2>/dev/null | head -1)
             
             if [ -f "$MAIN_JSON" ] && [ -f "$CURRENT_JSON" ]; then
               echo "### 📊 对比 main 分支" >> $GITHUB_STEP_SUMMARY
@@ -144,13 +159,12 @@ jobs:
               MAIN_PASSED=$(jq '.summary.passedTasks' "$MAIN_JSON")
               MAIN_TOTAL=$(jq '.summary.totalTasks' "$MAIN_JSON")
               MAIN_TRIALS=$(jq '.trialsStats.totalTrials // 1' "$MAIN_JSON")
-              CURRENT_PASSED=$(jq '.summary.passedTasks' "$CURRENT_JSON")
-              CURRENT_TOTAL=$(jq '.summary.totalTasks' "$CURRENT_JSON")
-              CURRENT_TRIALS=$(jq '.trialsStats.totalTrials // 1' "$CURRENT_JSON")
+              MAIN_SCORE=$(calc_overall_score "$MAIN_JSON")
               
               MAIN_RATE=$((MAIN_PASSED * 100 / MAIN_TOTAL))
               CURRENT_RATE=$((CURRENT_PASSED * 100 / CURRENT_TOTAL))
               DIFF=$((CURRENT_RATE - MAIN_RATE))
+              SCORE_DIFF=$((CURRENT_SCORE - MAIN_SCORE))
               
               if [ $DIFF -gt 0 ]; then
                 DIFF_STR="📈 +${DIFF}%"
@@ -160,22 +174,60 @@ jobs:
                 DIFF_STR="➡️ ±0%"
               fi
               
+              if [ $SCORE_DIFF -gt 0 ]; then
+                SCORE_DIFF_STR="📈 +${SCORE_DIFF}%"
+              elif [ $SCORE_DIFF -lt 0 ]; then
+                SCORE_DIFF_STR="📉 ${SCORE_DIFF}%"
+              else
+                SCORE_DIFF_STR="➡️ ±0%"
+              fi
+              
               echo "| 指标 | main | 当前分支 | 变化 |" >> $GITHUB_STEP_SUMMARY
               echo "|------|------|----------|------|" >> $GITHUB_STEP_SUMMARY
-              echo "| 评估次数 | ${MAIN_TRIALS} 次 | ${CURRENT_TRIALS} 次 | |" >> $GITHUB_STEP_SUMMARY
+              echo "| **总体得分** | **${MAIN_SCORE}%** | **${CURRENT_SCORE}%** | ${SCORE_DIFF_STR} |" >> $GITHUB_STEP_SUMMARY
               echo "| 通过率 | ${MAIN_RATE}% | ${CURRENT_RATE}% | ${DIFF_STR} |" >> $GITHUB_STEP_SUMMARY
               echo "| 通过数 | ${MAIN_PASSED}/${MAIN_TOTAL} | ${CURRENT_PASSED}/${CURRENT_TOTAL} | |" >> $GITHUB_STEP_SUMMARY
+              echo "| 评估次数 | ${MAIN_TRIALS} 次 | ${CURRENT_TRIALS} 次 | |" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            # 无 main 分支对比，直接显示当前得分
+            if [ -f "$CURRENT_JSON" ]; then
+              echo "### 📊 评估结果" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "- **总体得分**: ${CURRENT_SCORE}%" >> $GITHUB_STEP_SUMMARY
+              echo "- **通过数**: ${CURRENT_PASSED}/${CURRENT_TOTAL}" >> $GITHUB_STEP_SUMMARY
+              echo "- **评估次数**: ${CURRENT_TRIALS} 次" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
             fi
           fi
           
-          # 当前分支详细报告
+          # 任务得分明细
+          if [ -f "$CURRENT_JSON" ]; then
+            echo "### 📈 任务得分明细" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| 任务 | 状态 | 各评分器得分 |" >> $GITHUB_STEP_SUMMARY
+            echo "|------|------|--------------|" >> $GITHUB_STEP_SUMMARY
+            
+            jq -r '.results[] | 
+              .taskId as $id | 
+              (if .passed then "✅" else "❌" end) as $status |
+              ([.trial.graderResults[]? | "\(.type): \((.score * 100 | floor))%"] | join(", ")) as $scores |
+              "| \($id) | \($status) | \($scores) |"
+            ' "$CURRENT_JSON" >> $GITHUB_STEP_SUMMARY
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # 当前分支详细报告（折叠）
           REPORT_FILE=$(ls -t evals/results/*.md 2>/dev/null | head -1)
           
           if [ -f "$REPORT_FILE" ]; then
-            echo "### 📝 当前分支详情" >> $GITHUB_STEP_SUMMARY
+            echo "<details>" >> $GITHUB_STEP_SUMMARY
+            echo "<summary>📝 完整报告详情</summary>" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             cat "$REPORT_FILE" | tail -n +2 >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ 评估报告生成失败，请检查评估日志。" >> $GITHUB_STEP_SUMMARY
           fi
@@ -203,6 +255,31 @@ jobs:
               }
             }
             
+            // 计算总体得分
+            function calcOverallScore(report) {
+              if (!report?.results) return 0;
+              const scores = [];
+              for (const result of report.results) {
+                const graderResults = result.trial?.graderResults || [];
+                for (const grader of graderResults) {
+                  if (typeof grader.score === 'number') {
+                    scores.push(grader.score);
+                  }
+                }
+              }
+              return scores.length > 0 
+                ? Math.floor(scores.reduce((a, b) => a + b, 0) / scores.length * 100)
+                : 0;
+            }
+            
+            // 获取任务的 grader 得分字符串
+            function getGraderScoresStr(result) {
+              const graderResults = result.trial?.graderResults || [];
+              return graderResults
+                .map(g => `${g.type}: ${Math.floor(g.score * 100)}%`)
+                .join(', ') || 'N/A';
+            }
+            
             // 获取当前分支报告
             const currentReport = parseReport('evals/results');
             
@@ -214,6 +291,10 @@ jobs:
             // 构建评论内容
             let body = '## 📊 Agent-aware 评估结果\n\n';
             
+            // 计算得分
+            const currentScore = calcOverallScore(currentReport);
+            const mainScore = calcOverallScore(mainReport);
+            
             // 对比表格
             if (currentReport && mainReport) {
               const current = currentReport.summary;
@@ -224,6 +305,10 @@ jobs:
               const diffStr = diff > 0 ? `+${diff}%` : diff < 0 ? `${diff}%` : '±0%';
               const diffIcon = diff > 0 ? '📈' : diff < 0 ? '📉' : '➡️';
               
+              const scoreDiff = currentScore - mainScore;
+              const scoreDiffStr = scoreDiff > 0 ? `+${scoreDiff}%` : scoreDiff < 0 ? `${scoreDiff}%` : '±0%';
+              const scoreDiffIcon = scoreDiff > 0 ? '📈' : scoreDiff < 0 ? '📉' : '➡️';
+              
               // 获取评估次数
               const mainTrials = mainReport.trialsStats?.totalTrials || 1;
               const currentTrials = currentReport.trialsStats?.totalTrials || 1;
@@ -231,69 +316,74 @@ jobs:
               body += `### 📊 对比 main 分支\n\n`;
               body += `| 指标 | main | 当前分支 | 变化 |\n`;
               body += `|------|------|----------|------|\n`;
-              body += `| 评估次数 | ${mainTrials} 次 | ${currentTrials} 次 | |\n`;
+              body += `| **总体得分** | **${mainScore}%** | **${currentScore}%** | ${scoreDiffIcon} ${scoreDiffStr} |\n`;
               body += `| 通过率 | ${mainRate}% | ${currentRate}% | ${diffIcon} ${diffStr} |\n`;
-              body += `| 通过数 | ${main.passedTasks}/${main.totalTasks} | ${current.passedTasks}/${current.totalTasks} | |\n\n`;
+              body += `| 通过数 | ${main.passedTasks}/${main.totalTasks} | ${current.passedTasks}/${current.totalTasks} | |\n`;
+              body += `| 评估次数 | ${mainTrials} 次 | ${currentTrials} 次 | |\n\n`;
               
-              // 任务级别对比（包含多次评估统计）
-              body += `<details>\n<summary>📋 任务详情对比</summary>\n\n`;
-              body += `| 任务 | main | 当前 |\n`;
-              body += `|------|------|------|\n`;
-              
-              const mainTasks = {};
-              const mainTaskStats = mainReport.trialsStats?.taskStats || {};
-              mainReport.results.forEach(r => { mainTasks[r.taskId] = r.passed; });
-              
-              const currentTaskStats = currentReport.trialsStats?.taskStats || {};
-              
-              currentReport.results.forEach(r => {
-                // main 分支状态
-                let mainStatus = '-';
-                if (mainTasks[r.taskId] !== undefined) {
-                  const mainStat = mainTaskStats[r.taskId];
-                  if (mainStat && mainTrials > 1) {
-                    mainStatus = `${mainStat.passCount}/${mainTrials} ${mainTasks[r.taskId] ? '✅' : '❌'}`;
-                  } else {
-                    mainStatus = mainTasks[r.taskId] ? '✅' : '❌';
-                  }
-                }
-                
-                // 当前分支状态
-                let currentStatus;
-                const currentStat = currentTaskStats[r.taskId];
-                if (currentStat && currentTrials > 1) {
-                  currentStatus = `${currentStat.passCount}/${currentTrials} ${r.passed ? '✅' : '❌'}`;
-                } else {
-                  currentStatus = r.passed ? '✅' : '❌';
-                }
-                
-                body += `| ${r.taskId} | ${mainStatus} | ${currentStatus} |\n`;
-              });
-              body += `\n</details>\n\n`;
             } else if (currentReport) {
-              body += `> ℹ️ main 分支暂无评估基准数据\n\n`;
+              body += `### 📊 评估结果\n\n`;
+              body += `- **总体得分**: ${currentScore}%\n`;
+              body += `- **通过数**: ${currentReport.summary.passedTasks}/${currentReport.summary.totalTasks}\n\n`;
             }
             
-            // 当前分支详细报告
-            body += `### 📝 当前分支评估报告\n\n`;
-            
+            // 任务得分明细
             if (currentReport) {
-              const { summary } = currentReport;
-              body += `- **通过率**: ${((summary.passedTasks / summary.totalTasks) * 100).toFixed(0)}%\n`;
-              body += `- **通过数**: ${summary.passedTasks}/${summary.totalTasks}\n\n`;
+              body += `### 📈 任务得分明细\n\n`;
+              body += `| 任务 | 状态 | 各评分器得分 |\n`;
+              body += `|------|------|--------------|\n`;
               
-              body += `| 任务 | 耗时 | 状态 |\n`;
-              body += `|------|------|------|\n`;
               currentReport.results.forEach(r => {
                 const status = r.passed ? '✅' : '❌';
-                const duration = (r.duration / 1000).toFixed(1);
-                body += `| ${r.taskId} | ${duration}s | ${status} |\n`;
+                const scores = getGraderScoresStr(r);
+                body += `| ${r.taskId} | ${status} | ${scores} |\n`;
               });
+              body += '\n';
+              
+              // 任务级别对比（折叠）
+              if (mainReport) {
+                body += `<details>\n<summary>📋 与 main 分支任务对比</summary>\n\n`;
+                body += `| 任务 | main | 当前 |\n`;
+                body += `|------|------|------|\n`;
+                
+                const mainTasks = {};
+                const mainTaskStats = mainReport.trialsStats?.taskStats || {};
+                const mainTrials = mainReport.trialsStats?.totalTrials || 1;
+                mainReport.results.forEach(r => { mainTasks[r.taskId] = r.passed; });
+                
+                const currentTaskStats = currentReport.trialsStats?.taskStats || {};
+                const currentTrials = currentReport.trialsStats?.totalTrials || 1;
+                
+                currentReport.results.forEach(r => {
+                  // main 分支状态
+                  let mainStatus = '-';
+                  if (mainTasks[r.taskId] !== undefined) {
+                    const mainStat = mainTaskStats[r.taskId];
+                    if (mainStat && mainTrials > 1) {
+                      mainStatus = `${mainStat.passCount}/${mainTrials} ${mainTasks[r.taskId] ? '✅' : '❌'}`;
+                    } else {
+                      mainStatus = mainTasks[r.taskId] ? '✅' : '❌';
+                    }
+                  }
+                  
+                  // 当前分支状态
+                  let currentStatus;
+                  const currentStat = currentTaskStats[r.taskId];
+                  if (currentStat && currentTrials > 1) {
+                    currentStatus = `${currentStat.passCount}/${currentTrials} ${r.passed ? '✅' : '❌'}`;
+                  } else {
+                    currentStatus = r.passed ? '✅' : '❌';
+                  }
+                  
+                  body += `| ${r.taskId} | ${mainStatus} | ${currentStatus} |\n`;
+                });
+                body += `\n</details>\n\n`;
+              }
             } else {
               body += '⚠️ 评估报告生成失败，请检查 Actions 日志。\n';
             }
             
-            body += '\n\n---\n';
+            body += '\n---\n';
             body += `*Generated by [Agent-aware Evals](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})*`;
             
             // 查找并更新或创建评论
