@@ -145,31 +145,79 @@ function parseJudgeResponse(
 }
 
 /**
- * 使用 LLM Judge 评估
+ * 使用 LLM Judge 评估（带重试机制）
  */
 export async function judgeWithLLM(
   context: JudgeContext,
   rubric: Rubric,
-  llmConfig?: Partial<LLMConfig>
+  llmConfig?: Partial<LLMConfig>,
+  maxRetries: number = 2
 ): Promise<JudgeScore> {
   const messages: LLMMessage[] = [
     { role: 'system', content: buildSystemPrompt() },
     { role: 'user', content: buildUserPrompt(context, rubric) },
   ];
 
-  const response = await callLLM(messages, llmConfig);
-  const parsed = parseJudgeResponse(response.content, rubric);
+  let lastError: Error | null = null;
 
-  // 计算总分
-  const totalScore = parsed.criteriaScores.reduce((sum, cs) => sum + cs.score, 0);
-  const maxScore = getTotalWeight(rubric);
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await callLLM(messages, llmConfig);
+      const parsed = parseJudgeResponse(response.content, rubric);
 
+      // 检查是否解析成功（有有效分数）
+      const hasValidScores = parsed.criteriaScores.some((cs) => cs.score > 0);
+      const hasValidReasoning =
+        parsed.overallReasoning &&
+        !parsed.overallReasoning.includes('Failed to parse');
+
+      if (!hasValidScores && !hasValidReasoning && attempt < maxRetries) {
+        console.log(
+          `[LLM Judge] 响应解析失败，重试 ${attempt + 1}/${maxRetries}...`
+        );
+        // 等待一小段时间后重试
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        continue;
+      }
+
+      // 计算总分
+      const totalScore = parsed.criteriaScores.reduce(
+        (sum, cs) => sum + cs.score,
+        0
+      );
+      const maxScore = getTotalWeight(rubric);
+
+      return {
+        dimension: rubric.dimension,
+        totalScore,
+        maxScore,
+        criteriaScores: parsed.criteriaScores,
+        overallReasoning: parsed.overallReasoning,
+      };
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (attempt < maxRetries) {
+        console.log(
+          `[LLM Judge] 调用失败，重试 ${attempt + 1}/${maxRetries}...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+  }
+
+  // 所有重试都失败，返回默认结果
+  console.error('[LLM Judge] 所有重试均失败:', lastError?.message);
   return {
     dimension: rubric.dimension,
-    totalScore,
-    maxScore,
-    criteriaScores: parsed.criteriaScores,
-    overallReasoning: parsed.overallReasoning,
+    totalScore: 0,
+    maxScore: getTotalWeight(rubric),
+    criteriaScores: rubric.criteria.map((c) => ({
+      name: c.name,
+      score: 0,
+      maxScore: c.weight,
+      reasoning: `LLM 评估失败: ${lastError?.message || '未知错误'}`,
+    })),
+    overallReasoning: `LLM 评估失败: ${lastError?.message || '未知错误'}`,
   };
 }
 
