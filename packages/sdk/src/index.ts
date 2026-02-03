@@ -26,7 +26,14 @@ interface AgentAwareInstance {
 }
 
 const DEFAULT_ENDPOINT = 'http://localhost:4100/behaviors'
-const ERROR_ENDPOINT = "http://localhost:4100/errors";
+
+/**
+ * 从 behavior endpoint 推导 error endpoint
+ * 例如: http://localhost:4100/behaviors -> http://localhost:4100/errors
+ */
+function deriveErrorEndpoint(behaviorEndpoint: string): string {
+  return behaviorEndpoint.replace(/\/behaviors\/?$/, '/errors')
+}
 
 /**
  * 初始化 Agent-aware RUM SDK
@@ -66,9 +73,12 @@ export function initAgentAware(config: AgentAwareConfig = {}): AgentAwareInstanc
   // 生成 session ID
   const sessionId = getOrCreateSessionId()
 
+  // 从 behavior endpoint 推导 error endpoint
+  const errorEndpoint = deriveErrorEndpoint(endpoint)
+
   // 创建上报器
   const reporter = createReporter(endpoint, { debug })
-  const errorReporter = createReporter(ERROR_ENDPOINT, { debug });
+  const errorReporter = createReporter(errorEndpoint, { debug })
 
   // 创建追踪器
   const trackers: Tracker[] = []
