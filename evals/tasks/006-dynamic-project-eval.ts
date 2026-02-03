@@ -1,5 +1,5 @@
 /**
- * 任务 009: 动态项目真实场景评估
+ * 任务 006: 动态项目真实场景评估
  *
  * 随机生成前端项目，验证 agent-aware 检测能力，LLM 评估整体质量
  *
@@ -14,7 +14,7 @@
 import type { EvalTask } from '../harness/types';
 
 export const task: EvalTask = {
-  id: '009-dynamic-project-eval',
+  id: '006-dynamic-project-eval',
   name: '动态项目真实场景评估',
   description:
     '随机生成前端项目，验证 agent-aware 检测能力，LLM 评估整体质量',

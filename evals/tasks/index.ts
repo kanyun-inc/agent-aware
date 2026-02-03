@@ -1,16 +1,13 @@
 /**
  * 任务注册表
  *
- * 任务列表：
- * - 001: SDK 安装初始化及上报数据
- * - 002: Server 启动数据收集处理持久化
- * - 003: Agent-Aware 服务错误处理测试
- * - 004: Agent-Aware 行为检测响应
- * - 005: Agent-Aware 错误检测响应
- * - 006: Agent-Aware 错误修复
- * - 007: 完整 Agent-Aware 集成测试
- * - 008: Skill 遵循度评估 (LLM Judge)
- * - 009: 动态项目真实场景评估
+ * 精简后任务列表（6 个）：
+ * - 001: Server 基础功能测试（原 002+003 合并）
+ * - 002: 问题检测测试（原 004+005 合并）
+ * - 003: 错误修复测试（原 006）
+ * - 004: 完整集成测试（原 007）
+ * - 005: Skill 遵循度评估（原 008，LLM Judge）
+ * - 006: 动态项目真实场景评估（原 009）
  */
 
 import type { EvalTask } from '../harness/types';
@@ -19,15 +16,12 @@ import type { EvalTask } from '../harness/types';
 export { DEFAULT_TEST_APP_PATH } from './constants';
 
 // 导入所有任务
-import { task as task001 } from './001-sdk-init-report';
-import { task as task002 } from './002-server-data-collection';
-import { task as task003 } from './003-server-error-handling';
-import { task as task004 } from './004-server-behavior-detection';
-import { task as task005 } from './005-server-error-detection';
-import { task as task006 } from './006-error-fix';
-import { task as task007 } from './007-full-integration';
-import { task as task008 } from './008-skill-compliance';
-import { task as task009 } from './009-dynamic-project-eval';
+import { task as task001 } from './001-server-basic';
+import { task as task002 } from './002-issue-detection';
+import { task as task003 } from './003-error-fix';
+import { task as task004 } from './004-full-integration';
+import { task as task005 } from './005-skill-compliance';
+import { task as task006 } from './006-dynamic-project-eval';
 
 /**
  * 所有可用的任务列表
@@ -39,9 +33,6 @@ const allTasks: EvalTask[] = [
   task004,
   task005,
   task006,
-  task007,
-  task008,
-  task009,
 ];
 
 /**

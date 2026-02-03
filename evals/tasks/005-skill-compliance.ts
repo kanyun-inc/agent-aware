@@ -1,5 +1,5 @@
 /**
- * 任务 008: Skill 遵循度评估
+ * 任务 005: Skill 遵循度评估
  *
  * 使用 LLM Judge 评估 Agent 执行 Skill 的质量
  *
@@ -14,7 +14,7 @@ import type { EvalTask } from '../harness/types';
 import { DEFAULT_TEST_APP_PATH } from './constants';
 
 export const task: EvalTask = {
-  id: '008-skill-compliance',
+  id: '005-skill-compliance',
   name: 'Skill 遵循度评估',
   description:
     '使用 LLM Judge 评估 Agent 是否按照 skill/SKILL.md 文档正确执行任务',

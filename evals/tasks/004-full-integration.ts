@@ -1,5 +1,5 @@
 /**
- * 任务 007: 完整 Agent-Aware 集成测试
+ * 任务 004: 完整集成测试
  *
  * 验证完整的 vibe coding 项目集成流程：
  * 1. SDK 安装到测试项目
@@ -16,8 +16,8 @@ import type { EvalTask } from '../harness/types';
 import { DEFAULT_TEST_APP_PATH } from './constants';
 
 export const task: EvalTask = {
-  id: '007-full-integration',
-  name: '完整 Agent-Aware 集成测试',
+  id: '004-full-integration',
+  name: '完整集成测试',
   description: '验证 SDK + Server 在真实 vibe coding 项目中的完整集成流程',
   graders: [
     {

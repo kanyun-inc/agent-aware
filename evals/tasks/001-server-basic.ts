@@ -1,19 +1,20 @@
 /**
- * 任务 002: Server 启动数据收集处理持久化
+ * 任务 001: Server 基础功能测试
  *
  * 验证：
  * 1. Server 能够正常启动
- * 2. 能够接收和存储行为数据
- * 3. 能够接收和存储错误数据
- * 4. 数据持久化到 .agent-aware 目录
+ * 2. API 响应正确（包括错误处理）
+ * 3. 数据持久化到 .agent-aware 目录
+ *
+ * 合并自原 002（数据收集）和 003（错误处理）
  */
 
 import type { EvalTask } from '../harness/types';
 
 export const task: EvalTask = {
-  id: '002-server-data-collection',
-  name: 'Server 启动数据收集处理持久化',
-  description: '验证 Server 的启动、数据收集和持久化功能',
+  id: '001-server-basic',
+  name: 'Server 基础功能测试',
+  description: '验证 Server 的启动、API 响应、错误处理和数据持久化功能',
   graders: [
     {
       type: 'server',
