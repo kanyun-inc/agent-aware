@@ -40,7 +40,7 @@ jobs:
 
       - name: Install Playwright
         run: |
-          pnpm add -D playwright @playwright/test
+          pnpm add -Dw playwright @playwright/test
           npx playwright install chromium --with-deps
 
       - name: Run Evaluations
