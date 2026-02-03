@@ -43,6 +43,9 @@ jobs:
           pnpm add -Dw playwright @playwright/test
           npx playwright install chromium --with-deps
 
+      - name: Ensure results directory exists
+        run: mkdir -p evals/results/transcripts
+
       - name: Run Evaluations
         id: eval
         env:

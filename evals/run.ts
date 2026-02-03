@@ -11,16 +11,32 @@
  * 参考: https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents
  */
 
-// 尝试加载 .env.local 环境变量（本地开发用，CI 环境通过 env: 配置）
-try {
-  // 动态导入 dotenv，避免在未安装时报错
-  const dotenv = await import('dotenv');
-  dotenv.config({ path: '.env.local' });
-} catch {
-  // dotenv 未安装，跳过（CI 环境不需要）
-}
-
 import path from 'node:path';
+import fs from 'node:fs';
+
+// 尝试加载 .env.local 环境变量（本地开发用，CI 环境通过 env: 配置）
+function loadEnvFile() {
+  const envPath = path.join(process.cwd(), '.env.local');
+  if (!fs.existsSync(envPath)) return;
+  
+  try {
+    const content = fs.readFileSync(envPath, 'utf-8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const [key, ...valueParts] = trimmed.split('=');
+      if (key && valueParts.length > 0) {
+        const value = valueParts.join('=');
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
+      }
+    }
+  } catch {
+    // 忽略错误
+  }
+}
+loadEnvFile();
 import { defaultConfig, parseArgs } from './config';
 import { generateReport, saveReport } from './harness/reporter';
 import { runEval } from './harness/runner';
