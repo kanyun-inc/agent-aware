@@ -40,6 +40,8 @@ export interface LLMGraderConfig {
       | 'code_placement'
       | 'diagnosis_quality'
       | 'cleanup_quality'
+      | 'project_generation'
+      | 'detection_accuracy'
     )[];
     /** 自定义 Rubrics（可选） */
     customRubrics?: Rubric[];

@@ -11,6 +11,10 @@
  * 参考: https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents
  */
 
+// 加载 .env.local 环境变量
+import { config as loadEnv } from 'dotenv';
+loadEnv({ path: '.env.local' });
+
 import path from 'node:path';
 import { defaultConfig, parseArgs } from './config';
 import { generateReport, saveReport } from './harness/reporter';

@@ -56,6 +56,7 @@ pnpm eval --trials 5 -p       # 5 次评估 + 并行加速
 | `006-error-fix` | Agent-Aware 错误修复 | E2E | 验证检测到问题后的修复能力和修复效果 |
 | `007-full-integration` | 完整 Agent-Aware 集成测试 | E2E | 验证 SDK + Server 在真实项目中的完整集成流程 |
 | `008-skill-compliance` | Skill 遵循度评估 | LLM | 使用 LLM Judge 评估 Agent 执行 Skill 的质量 |
+| `009-dynamic-project-eval` | 动态项目真实场景评估 | Dynamic | 随机生成前端项目，验证 agent-aware 检测能力，LLM 评估整体质量 |
 
 ## LLM Grader (LLM as Judge)
 
@@ -69,6 +70,8 @@ pnpm eval --trials 5 -p       # 5 次评估 + 并行加速
 | `code_placement` | 代码放置正确性 - initAgentAware() 是否放在正确的入口文件 |
 | `diagnosis_quality` | 问题诊断能力 - 检测到问题后是否正确分析和修复 |
 | `cleanup_quality` | 清理完整性 - 任务结束时是否正确清理 SDK 代码 |
+| `project_generation` | 项目生成质量 - LLM 生成的测试项目结构和代码质量 |
+| `detection_accuracy` | 检测准确性 - agent-aware 对预埋问题的检测效果 |
 
 ### 配置 API Key
 

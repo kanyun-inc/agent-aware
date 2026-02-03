@@ -10,6 +10,7 @@ import { gradeE2E } from '../graders/e2e-grader';
 import { gradeSDK } from '../graders/sdk-grader';
 import { gradeServer } from '../graders/server-grader';
 import { gradeLLM, isLLMGraderAvailable } from '../graders/llm';
+import { gradeDynamicProject } from '../graders/dynamic-project';
 import {
   createIsolatedEnvironment,
   listProjectFiles,
@@ -97,6 +98,20 @@ async function runTrial(
             };
           } else {
             result = await gradeLLM(env, graderConfig, recorder, task.description);
+          }
+          break;
+        case 'dynamic-project':
+          // 动态项目评分器也需要 LLM API Key
+          if (!isLLMGraderAvailable()) {
+            result = {
+              type: 'dynamic-project',
+              passed: false,
+              score: 0,
+              details: { skipped: true, reason: 'No LLM API key configured for project generation' },
+              error: 'Dynamic project grader requires LLM API key',
+            };
+          } else {
+            result = await gradeDynamicProject(env, graderConfig, recorder);
           }
           break;
         default:

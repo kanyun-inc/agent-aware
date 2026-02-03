@@ -66,7 +66,8 @@ export type GraderConfig =
   | ServerGraderConfig
   | E2EGraderConfig
   | BuildGraderConfig
-  | LLMGraderConfig;
+  | LLMGraderConfig
+  | DynamicProjectGraderConfig;
 
 /**
  * LLM 评分器配置
@@ -81,6 +82,8 @@ export interface LLMGraderConfig {
       | 'code_placement'
       | 'diagnosis_quality'
       | 'cleanup_quality'
+      | 'project_generation'
+      | 'detection_accuracy'
     )[];
     /** LLM 提供商 */
     provider?: 'openai' | 'anthropic' | 'bedrock';
@@ -150,11 +153,43 @@ export interface BuildGraderConfig {
   };
 }
 
+/**
+ * 动态项目评分器配置
+ * 随机生成前端项目并验证检测能力
+ */
+export interface DynamicProjectGraderConfig {
+  type: 'dynamic-project';
+  checks: {
+    /** 是否生成新项目（false 则使用已有项目） */
+    generateProject?: boolean;
+    /** 是否使用浏览器自动触发问题 */
+    autoTrigger?: boolean;
+    /** 项目生成配置 */
+    generatorConfig?: {
+      /** 预埋问题数量配置 */
+      bugCounts?: {
+        deadClick?: number;
+        rageClick?: number;
+        runtimeError?: number;
+      };
+    };
+    /** 触发器配置 */
+    triggerConfig?: {
+      /** 页面加载等待时间（毫秒） */
+      pageLoadWait?: number;
+      /** 数据上报等待时间（毫秒） */
+      reportWait?: number;
+      /** rage click 点击次数 */
+      rageClickCount?: number;
+    };
+  };
+}
+
 // ==================== 评分结果 ====================
 
 export interface GraderResult {
   /** 评分器类型 */
-  type: 'sdk' | 'server' | 'e2e' | 'build' | 'llm';
+  type: 'sdk' | 'server' | 'e2e' | 'build' | 'llm' | 'dynamic-project';
   /** 是否通过 */
   passed: boolean;
   /** 分数（0-1） */

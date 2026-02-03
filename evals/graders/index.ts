@@ -7,3 +7,4 @@ export * from './sdk-grader';
 export * from './server-grader';
 export * from './e2e-grader';
 export * from './llm';
+export * from './dynamic-project';
