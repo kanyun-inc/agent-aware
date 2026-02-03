@@ -66,7 +66,24 @@ export type GraderConfig =
   | ServerGraderConfig
   | E2EGraderConfig
   | BuildGraderConfig
-  | LLMGraderConfig;
+  | LLMGraderConfig
+  | SkillE2EGraderConfig;
+
+/**
+ * Skill E2E 评分器配置
+ * 基于 SKILL.md 流程的完整 E2E 评估
+ */
+export interface SkillE2EGraderConfig {
+  type: 'skill-e2e';
+  checks: {
+    /** 监控时长（秒） */
+    monitorDuration?: number;
+    /** 使用的 AI 模型 */
+    model?: string;
+    /** 是否使用浏览器自动化 */
+    browserAutomation?: boolean;
+  };
+}
 
 /**
  * LLM 评分器配置

@@ -10,6 +10,7 @@
  * - 006: Agent-Aware 错误修复
  * - 007: 完整 Agent-Aware 集成测试
  * - 008: Skill 遵循度评估 (LLM Judge)
+ * - 009: Skill E2E 完整测试 (LLM 生成 + 浏览器自动化)
  */
 
 import type { EvalTask } from '../harness/types';
@@ -26,6 +27,7 @@ import { task as task005 } from './005-server-error-detection';
 import { task as task006 } from './006-error-fix';
 import { task as task007 } from './007-full-integration';
 import { task as task008 } from './008-skill-compliance';
+import { task009 } from './009-skill-e2e-test';
 
 /**
  * 所有可用的任务列表
@@ -39,6 +41,7 @@ const allTasks: EvalTask[] = [
   task006,
   task007,
   task008,
+  task009,
 ];
 
 /**

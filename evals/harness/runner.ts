@@ -10,6 +10,7 @@ import { gradeE2E } from '../graders/e2e-grader';
 import { gradeSDK } from '../graders/sdk-grader';
 import { gradeServer } from '../graders/server-grader';
 import { gradeLLM, isLLMGraderAvailable } from '../graders/llm';
+import { gradeSkillE2E } from '../graders/skill-e2e-grader';
 import {
   createIsolatedEnvironment,
   listProjectFiles,
@@ -97,6 +98,19 @@ async function runTrial(
             };
           } else {
             result = await gradeLLM(env, graderConfig, recorder, task.description);
+          }
+          break;
+        case 'skill-e2e':
+          // Skill E2E Grader - 完整流程测试
+          if (!isLLMGraderAvailable()) {
+            result = {
+              type: 'skill-e2e',
+              passed: true,
+              score: 1,
+              details: { skipped: true, reason: 'No API key configured for LLM' },
+            };
+          } else {
+            result = await gradeSkillE2E(env, graderConfig, recorder, task.description);
           }
           break;
         default:
