@@ -71,8 +71,8 @@ Generate a complete React + Vite project with intentionally embedded bugs for te
 
 ### 1. Project Structure
 Create a minimal but complete project with these files:
-- package.json (with vite, react, react-dom dependencies)
-- vite.config.js
+- package.json (MUST include scripts: {"dev": "vite", "build": "vite build"}, and dependencies: vite@^5, react@^18, react-dom@^18)
+- vite.config.js (with react plugin: @vitejs/plugin-react)
 - index.html
 - src/main.jsx (entry point with agent-aware SDK initialization)
 - src/App.jsx (main component)

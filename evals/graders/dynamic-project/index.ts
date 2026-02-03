@@ -184,40 +184,68 @@ async function startDevServer(
   port: number
 ): Promise<ChildProcess> {
   return new Promise((resolve, reject) => {
-    const proc = spawn('npx', ['vite', '--port', String(port)], {
+    // 使用 pnpm dev 启动（更可靠），设置端口通过环境变量
+    const proc = spawn('pnpm', ['dev', '--', '--port', String(port), '--host'], {
       cwd: projectPath,
       stdio: 'pipe',
       shell: true,
+      env: {
+        ...process.env,
+        // 确保不使用缓存
+        VITE_CJS_IGNORE_WARNING: 'true',
+      },
     });
 
     let started = false;
+    let output = '';
+
+    const checkStarted = (data: string) => {
+      output += data;
+      // Vite 输出格式可能是 "Local:", "localhost:", "127.0.0.1:", "VITE", "ready in"
+      // 也检查端口号
+      if (
+        !started &&
+        (data.includes('Local:') ||
+          data.includes('localhost:') ||
+          data.includes('127.0.0.1:') ||
+          data.includes('ready in') ||
+          data.includes('VITE v') ||
+          data.includes(`${port}`))
+      ) {
+        started = true;
+        // 给 Vite 一点时间完全初始化
+        setTimeout(() => resolve(proc), 1000);
+      }
+    };
 
     proc.stdout?.on('data', (data: Buffer) => {
-      const output = data.toString();
-      if (output.includes('Local:') && !started) {
-        started = true;
-        resolve(proc);
-      }
+      checkStarted(data.toString());
     });
 
     proc.stderr?.on('data', (data: Buffer) => {
-      const output = data.toString();
       // Vite 有时会在 stderr 输出信息
-      if (output.includes('Local:') && !started) {
-        started = true;
-        resolve(proc);
+      checkStarted(data.toString());
+    });
+
+    proc.on('error', (err) => {
+      if (!started) {
+        reject(new Error(`Dev server error: ${err.message}`));
       }
     });
 
-    proc.on('error', reject);
+    proc.on('exit', (code) => {
+      if (!started && code !== 0) {
+        reject(new Error(`Dev server exited with code ${code}. Output: ${output.slice(-500)}`));
+      }
+    });
 
-    // 超时
+    // 超时 - CI 环境可能较慢，增加到 120 秒
     setTimeout(() => {
       if (!started) {
         proc.kill();
-        reject(new Error('Dev server start timeout'));
+        reject(new Error(`Dev server start timeout (120s). Output: ${output.slice(-500)}`));
       }
-    }, 30000);
+    }, 120000);
   });
 }
 
@@ -226,21 +254,39 @@ async function startDevServer(
  */
 async function installDependencies(projectPath: string): Promise<void> {
   return new Promise((resolve, reject) => {
+    let output = '';
+    
     const proc = spawn('pnpm', ['install', '--no-frozen-lockfile'], {
       cwd: projectPath,
       stdio: 'pipe',
       shell: true,
     });
 
+    proc.stdout?.on('data', (data: Buffer) => {
+      output += data.toString();
+    });
+
+    proc.stderr?.on('data', (data: Buffer) => {
+      output += data.toString();
+    });
+
     proc.on('close', (code) => {
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`pnpm install failed with code ${code}`));
+        reject(new Error(`pnpm install failed with code ${code}. Output: ${output.slice(-500)}`));
       }
     });
 
-    proc.on('error', reject);
+    proc.on('error', (err) => {
+      reject(new Error(`pnpm install error: ${err.message}. Output: ${output.slice(-500)}`));
+    });
+
+    // 超时 180 秒（CI 可能较慢）
+    setTimeout(() => {
+      proc.kill();
+      reject(new Error(`pnpm install timeout (180s). Output: ${output.slice(-500)}`));
+    }, 180000);
   });
 }
 
