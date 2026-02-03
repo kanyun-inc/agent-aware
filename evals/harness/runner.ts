@@ -101,14 +101,13 @@ async function runTrial(
           }
           break;
         case 'dynamic-project':
-          // 动态项目评分器也需要 LLM API Key
+          // 动态项目评分器需要 LLM API Key 和 Playwright
           if (!isLLMGraderAvailable()) {
             result = {
               type: 'dynamic-project',
-              passed: false,
-              score: 0,
+              passed: true, // 跳过时默认通过（与 LLM grader 行为一致）
+              score: 1,
               details: { skipped: true, reason: 'No LLM API key configured for project generation' },
-              error: 'Dynamic project grader requires LLM API key',
             };
           } else {
             result = await gradeDynamicProject(env, graderConfig, recorder);

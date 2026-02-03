@@ -321,16 +321,25 @@ jobs:
               });
             }
 
+      - name: List results directory
+        if: always()
+        run: |
+          echo "=== Current directory ==="
+          pwd
+          echo "=== evals/results contents ==="
+          ls -la evals/results/ || echo "Directory not found"
+          echo "=== Looking for report files ==="
+          find . -name "report-*.json" -o -name "report-*.md" 2>/dev/null || echo "No reports found"
+
       - name: Upload Eval Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: eval-results
           path: |
-            evals/results/*.json
-            evals/results/*.md
-            evals/results/transcripts/
+            evals/results/
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Check Eval Status
         if: steps.eval.outputs.exit_code != '0'

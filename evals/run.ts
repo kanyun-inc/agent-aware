@@ -11,9 +11,14 @@
  * 参考: https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents
  */
 
-// 加载 .env.local 环境变量
-import { config as loadEnv } from 'dotenv';
-loadEnv({ path: '.env.local' });
+// 尝试加载 .env.local 环境变量（本地开发用，CI 环境通过 env: 配置）
+try {
+  // 动态导入 dotenv，避免在未安装时报错
+  const dotenv = await import('dotenv');
+  dotenv.config({ path: '.env.local' });
+} catch {
+  // dotenv 未安装，跳过（CI 环境不需要）
+}
 
 import path from 'node:path';
 import { defaultConfig, parseArgs } from './config';
