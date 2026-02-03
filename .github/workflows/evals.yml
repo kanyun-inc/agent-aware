@@ -38,6 +38,11 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Install Playwright
+        run: |
+          pnpm add -D playwright @playwright/test
+          npx playwright install chromium --with-deps
+
       - name: Run Evaluations
         id: eval
         env:
