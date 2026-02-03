@@ -9,6 +9,8 @@ import {
   BedrockRuntimeClient,
   InvokeModelCommand,
 } from '@aws-sdk/client-bedrock-runtime';
+import { NodeHttpHandler } from '@smithy/node-http-handler';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export interface LLMConfig {
   /** LLM 提供商 */
@@ -191,6 +193,14 @@ async function callAnthropic(
 }
 
 /**
+ * 获取代理 URL
+ */
+function getProxyUrl(): string | undefined {
+  return process.env.https_proxy || process.env.HTTPS_PROXY || 
+         process.env.http_proxy || process.env.HTTP_PROXY;
+}
+
+/**
  * 调用 AWS Bedrock
  */
 async function callBedrock(
@@ -209,13 +219,25 @@ async function callBedrock(
     );
   }
 
-  const client = new BedrockRuntimeClient({
+  // 配置代理支持
+  const proxyUrl = getProxyUrl();
+  const clientConfig: ConstructorParameters<typeof BedrockRuntimeClient>[0] = {
     region,
     credentials: {
       accessKeyId,
       secretAccessKey,
     },
-  });
+  };
+
+  if (proxyUrl) {
+    const agent = new HttpsProxyAgent(proxyUrl);
+    clientConfig.requestHandler = new NodeHttpHandler({
+      httpsAgent: agent,
+      httpAgent: agent,
+    });
+  }
+
+  const client = new BedrockRuntimeClient(clientConfig);
 
   // 分离 system message
   const systemMessage = messages.find((m) => m.role === 'system');

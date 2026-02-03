@@ -19,10 +19,7 @@ import {
   type Rubric,
   type JudgeScore,
   getRubric,
-  skillComplianceRubric,
-  codePlacementRubric,
-  diagnosisQualityRubric,
-  cleanupQualityRubric,
+  getAllRubrics,
 } from './rubrics';
 import {
   type JudgeContext,
@@ -159,12 +156,8 @@ export async function gradeLLM(
 
     if (rubrics.length === 0) {
       // 默认使用所有预定义的 Rubrics
-      rubrics.push(
-        skillComplianceRubric,
-        codePlacementRubric,
-        diagnosisQualityRubric,
-        cleanupQualityRubric
-      );
+      const all = getAllRubrics();
+      rubrics.push(...Object.values(all));
     }
 
     details.rubricCount = rubrics.length;
