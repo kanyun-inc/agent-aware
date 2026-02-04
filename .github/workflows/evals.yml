@@ -295,6 +295,11 @@ jobs:
             const currentScore = calcOverallScore(currentReport);
             const mainScore = calcOverallScore(mainReport);
             
+            // 在最前面显示 main 分支基准得分
+            if (mainReport) {
+              body += `> 📌 **main 分支基准得分: ${mainScore}%**\n\n`;
+            }
+            
             // 对比表格
             if (currentReport && mainReport) {
               const current = currentReport.summary;
